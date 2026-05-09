@@ -124,6 +124,14 @@ class SpeciesCountrySelect(MethodView):
         return SpeciesService.country_select(search)
 
 
+@specie_bp.route("/bem/select")
+class SpeciesBemSelect(MethodView):
+    @specie_bp.response(200, SelectSchema(many=True))
+    def get(self):
+        search = request.args.get("search", type=str)
+        return SpeciesService.bem_select(search)
+
+
 @specie_bp.route("/select")
 class SpeciesSelect(MethodView):
     @specie_bp.response(200, SpeciesSelectSchema(many=True))

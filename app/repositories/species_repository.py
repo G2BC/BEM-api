@@ -163,6 +163,26 @@ class SpeciesRepository:
         return options
 
     @classmethod
+    def bem_select(
+        cls,
+        search: str | None = "",
+    ):
+        search = (search or "").strip()
+
+        query = Species.query.with_entities(Species.bem).filter(Species.bem.isnot(None), func.trim(Species.bem) != "").distinct()
+
+        if search:
+            query = query.filter(Species.bem.ilike(f"%{search}%"))
+
+        query = query.order_by(Species.bem.asc())
+
+        bems = query.all()
+
+        options = [{"label": bem, "value": bem} for (bem,) in bems if bem]
+
+        return options
+
+    @classmethod
     def distributions_select(cls):
         distributions = Distribution.query.order_by(Distribution.slug.asc()).all()
         return distributions

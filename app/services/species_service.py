@@ -71,6 +71,10 @@ class SpeciesService:
     def country_select(search: str | None = ""):
         return SpeciesRepository.country_select(search)
 
+    @staticmethod
+    def bem_select(search: str | None = ""):
+        return SpeciesRepository.bem_select(search)
+
     def distributions_select():
         return SpeciesRepository.distributions_select()
 
