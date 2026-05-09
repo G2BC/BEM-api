@@ -16,6 +16,7 @@ class Species(db.Model):
 
     # Identidade científica
     scientific_name = db.Column(db.Text, nullable=True)
+    common_name = db.Column(db.Text, nullable=True)
 
     # Taxonomia (simples)
     family = db.Column(db.Text)
