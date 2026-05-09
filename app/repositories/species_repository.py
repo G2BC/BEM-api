@@ -173,12 +173,16 @@ class SpeciesRepository:
     ):
         search = (search or "").strip()
 
-        query = Species.query.with_entities(Species.bem).filter(Species.bem.isnot(None), func.trim(Species.bem) != "").distinct()
+        query = Species.query.with_entities(Species.bem).filter(Species.bem.isnot(None), func.trim(Species.bem) != "").group_by(Species.bem)
 
         if search:
             query = query.filter(Species.bem.ilike(f"%{search}%"))
 
-        query = query.order_by(Species.bem.asc())
+        query = query.order_by(
+            case((Species.bem.ilike("BEM%"), 0), else_=1).asc(),
+            func.length(Species.bem).asc(),
+            Species.bem.asc()
+        )
 
         bems = query.all()
 
