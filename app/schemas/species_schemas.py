@@ -87,9 +87,6 @@ class SpeciesPatchRequestSchema(Schema):
         unknown = EXCLUDE
 
     scientific_name = fields.String(required=False, allow_none=True)
-    family = fields.String(required=False, allow_none=True)
-    group_name = fields.String(required=False, allow_none=True)
-    section = fields.String(required=False, allow_none=True)
     type_country = fields.String(required=False, allow_none=True)
     mycobank_index_fungorum_id = fields.Raw(required=False, allow_none=True)
     mycobank_type = fields.String(required=False, allow_none=True)
@@ -462,9 +459,7 @@ class SpeciesDetailSchema(Schema):
     id = fields.Integer(dump_only=True)
     scientific_name = fields.String(allow_none=True)
     is_visible = fields.Boolean()
-    section = fields.String(llow_none=True)
     ncbi_taxonomy_id = fields.Integer(allow_none=True)
-    family = fields.String(allow_none=True)
     type_country = fields.String(allow_none=True)
     mycobank_type = fields.String(allow_none=True)
     mycobank_index_fungorum_id = fields.String(allow_none=True)

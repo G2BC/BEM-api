@@ -16,8 +16,6 @@ class SpeciesChangeRequestService:
     MAX_PER_PAGE = 100
     ALLOWED_SPECIES_FIELDS = {
         "scientific_name",
-        "group_name",
-        "section",
         "lum_mycelium",
         "lum_basidiome",
         "lum_stipe",

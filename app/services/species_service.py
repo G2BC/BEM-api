@@ -71,11 +71,6 @@ class SpeciesService:
     def country_select(search: str | None = ""):
         return SpeciesRepository.country_select(search)
 
-    @staticmethod
-    def family_select(search: str | None = ""):
-        return SpeciesRepository.family_select(search)
-
-    @staticmethod
     def distributions_select():
         return SpeciesRepository.distributions_select()
 

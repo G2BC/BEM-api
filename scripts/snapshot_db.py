@@ -98,9 +98,6 @@ def _build_row_pt(s) -> dict:
     return {
         "LUMM_ID": s.id,
         "Nome científico": s.scientific_name,
-        "Família": s.family,
-        "Grupo": s.group_name,
-        "Seção": s.section,
         "País do espécime tipo": s.type_country,
         "MycoBank #": _id(s.mycobank_index_fungorum_id),
         "Tipo Mycobank": s.mycobank_type,
@@ -155,9 +152,6 @@ def _build_row_en(s) -> dict:
     return {
         "LUMM_ID": s.id,
         "Scientific name": s.scientific_name,
-        "Family": s.family,
-        "Group": s.group_name,
-        "Section": s.section,
         "Type specimen country": s.type_country,
         "MycoBank #": _id(s.mycobank_index_fungorum_id),
         "MycoBank type": s.mycobank_type,

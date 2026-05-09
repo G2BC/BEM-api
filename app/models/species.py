@@ -8,7 +8,6 @@ class Species(db.Model):
     __tablename__ = "species"
     __table_args__ = (
         db.UniqueConstraint("scientific_name", name="uq_species_scientific_name"),
-        db.Index("idx_species_family", "family"),
     )
 
     id = db.Column(db.BigInteger, primary_key=True)
@@ -17,11 +16,6 @@ class Species(db.Model):
     # Identidade científica
     scientific_name = db.Column(db.Text, nullable=True)
     common_name = db.Column(db.Text, nullable=True)
-
-    # Taxonomia (simples)
-    family = db.Column(db.Text)
-    group_name = db.Column(db.Text)
-    section = db.Column(db.Text)
 
     # Localidade tipo + distribuição
     type_country = db.Column(db.Text)
