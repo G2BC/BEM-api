@@ -1,5 +1,10 @@
 """
-Popula a coluna conservation_status da species_characteristics com os dados da API IUCN
+Sincroniza dados da IUCN Red List para espécies cadastradas no BEM.
+
+Atualiza:
+- species.iucn_redlist com o assessment_id mais recente
+- species_characteristics.conservation_status com a categoria IUCN
+- species_characteristics.iucn_assessment_year e iucn_assessment_url
 """
 
 import os
@@ -20,7 +25,6 @@ from app.models.species_characteristics import SpeciesCharacteristics  # noqa: E
 
 app = create_app()
 
-
 def _i(value):
     if value in (None, ""):
         return None
@@ -34,19 +38,54 @@ def _log(message: str, level: str = "INFO") -> None:
     print(f"[{level}] {message}")
 
 
+def parse_csv_values(value: str | None) -> list[str]:
+    return [part for raw in (value or "").split(",") if (part := raw.strip())]
+
+
+def _response_error_message(response: requests.Response) -> str:
+    body = (response.text or "").strip().replace("\n", " ")
+    if len(body) > 300:
+        body = f"{body[:300]}..."
+    return f"HTTP {response.status_code}" + (f" | {body}" if body else "")
+
+
+def _is_cloudflare_challenge(response: requests.Response) -> bool:
+    server = response.headers.get("server", "").lower()
+    body = (response.text or "").lower()
+    return (
+        response.status_code == 403
+        and ("cloudflare" in server or "just a moment" in body or "cf-ray" in response.headers)
+    )
+
+
+def _request_headers(api_key: str) -> dict[str, str]:
+    return {
+        "authorization": api_key,
+        "accept": "application/json",
+    }
+
+
 def main():
-    raw_lumm_ids = os.environ.get("LUMM_ID", "")
-    lumm_ids = [value for raw in raw_lumm_ids.split(",") if (value := _i(raw))]
+    bem_ids = [v for raw in (os.environ.get("BEM_ID") or "").split(",") if (v := _i(raw.strip()))]
+    bem_codes = parse_csv_values(os.environ.get("BEM"))
+    api_key = os.getenv("IUCN_API_KEY")
 
     _log("=== Import IUCN Red List: inicio ===")
-    if lumm_ids:
-        _log(f"Modo individual: LUMM_IDs={lumm_ids}")
+    if bem_ids:
+        _log(f"Modo individual: BEM_IDs={bem_ids}")
+    if bem_codes:
+        _log(f"Modo individual: BEMs={bem_codes}")
+
+    if not api_key:
+        raise RuntimeError("IUCN_API_KEY nao configurada")
 
     with app.app_context():
-        query = Species.query
+        query = Species.query.filter(Species.scientific_name.isnot(None))
 
-        if lumm_ids:
-            query = query.filter(Species.id.in_(lumm_ids))
+        if bem_ids:
+            query = query.filter(Species.id.in_(bem_ids))
+        if bem_codes:
+            query = query.filter(Species.bem.in_(bem_codes))
 
         species_list = query.all()
         total = len(species_list)
@@ -76,10 +115,7 @@ def main():
 
             response = requests.get(
                 "https://api.iucnredlist.org/api/v4/taxa/scientific_name",
-                headers={
-                    "authorization": os.getenv("IUCN_API_KEY"),
-                    "accept": "application/json",
-                },
+                headers=_request_headers(api_key),
                 params={
                     "genus_name": genus_name,
                     "species_name": species_name,
@@ -90,9 +126,17 @@ def main():
             if response.status_code != 200:
                 api_errors += 1
                 _log(
-                    f"[{idx}/{total}] {species.scientific_name} - HTTP {response.status_code}",
+                    (
+                        f"[{idx}/{total}] {species.scientific_name} - "
+                        f"{_response_error_message(response)}"
+                    ),
                     "ERRO",
                 )
+                if _is_cloudflare_challenge(response):
+                    raise RuntimeError(
+                        "Cloudflare bloqueou a API da IUCN para este ambiente/IP. "
+                        "Abortando para nao tentar todas as especies."
+                    )
                 time.sleep(1)
                 continue
 
@@ -134,18 +178,18 @@ def main():
                 iucn_assessment_year = latest_assessment.get("year_published")
                 url = latest_assessment.get("url")
 
-                Species.query.filter_by(id=species.id).update(
-                    {"iucn_redlist": assessment_id},
-                    synchronize_session=False,
+                species.iucn_redlist = str(assessment_id) if assessment_id is not None else None
+
+                characteristics = species.characteristics
+                if not characteristics:
+                    characteristics = SpeciesCharacteristics(species_id=species.id)
+                    db.session.add(characteristics)
+
+                characteristics.conservation_status = conservation_status
+                characteristics.iucn_assessment_year = (
+                    str(iucn_assessment_year) if iucn_assessment_year is not None else None
                 )
-                SpeciesCharacteristics.query.filter_by(species_id=species.id).update(
-                    {
-                        "conservation_status": conservation_status,
-                        "iucn_assessment_year": iucn_assessment_year,
-                        "iucn_assessment_url": url,
-                    },
-                    synchronize_session=False,
-                )
+                characteristics.iucn_assessment_url = url
 
                 db.session.commit()
                 updated += 1

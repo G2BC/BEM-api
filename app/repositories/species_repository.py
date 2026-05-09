@@ -92,10 +92,15 @@ class SpeciesRepository:
     @classmethod
     def statistics(cls) -> dict[str, int]:
         is_bem = Species.bem.in_(["BEM1", "BEM2", "BEM3", "BEM4", "BEM5", "BEM6"])
-        is_brazilian_type = (Species.brazilian_type == 'T') | (Species.brazilian_type_synonym == 'TS')
-        normalized_iucn = func.upper(func.trim(Species.iucn_redlist))
+        is_brazilian_type = (Species.brazilian_type == "T") | (
+            Species.brazilian_type_synonym == "TS"
+        )
+        normalized_iucn = func.upper(func.trim(SpeciesCharacteristics.conservation_status))
 
-        species_counts = Species.query.with_entities(
+        species_counts = Species.query.outerjoin(
+            SpeciesCharacteristics,
+            SpeciesCharacteristics.species_id == Species.id,
+        ).with_entities(
             func.count(Species.id).filter(is_bem).label("edible_brazil_species"),
             func.count(Species.id)
             .filter(normalized_iucn.in_(cls.THREATENED_IUCN_CATEGORIES))
@@ -173,7 +178,11 @@ class SpeciesRepository:
     ):
         search = (search or "").strip()
 
-        query = Species.query.with_entities(Species.bem).filter(Species.bem.isnot(None), func.trim(Species.bem) != "").group_by(Species.bem)
+        query = (
+            Species.query.with_entities(Species.bem)
+            .filter(Species.bem.isnot(None), func.trim(Species.bem) != "")
+            .group_by(Species.bem)
+        )
 
         if search:
             query = query.filter(Species.bem.ilike(f"%{search}%"))
