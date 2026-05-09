@@ -13,7 +13,16 @@ class Taxon(db.Model):
         db.ForeignKey("species.id", ondelete="CASCADE"),
         nullable=False,
     )
-    classification = db.Column(db.Text, nullable=True)
+    classification_raw = db.Column(db.Text, nullable=True)
+    kingdom = db.Column(db.Text, nullable=True)
+    phylum = db.Column(db.Text, nullable=True)
+    class_name = db.Column(db.Text, nullable=True)
+    order = db.Column(db.Text, nullable=True)
+    family = db.Column(db.Text, nullable=True)
+    genus = db.Column(db.Text, nullable=True)
+    section = db.Column(db.Text, nullable=True)
+    group = db.Column(db.Text, nullable=True)
+    specific_epithet = db.Column(db.Text, nullable=True)
     synonyms = db.Column(db.Text, nullable=True)
     basionym = db.Column(db.Text, nullable=True)
     name_type = db.Column(db.Text, nullable=True)

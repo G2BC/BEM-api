@@ -107,7 +107,7 @@ def download_and_read_mblist_filtered(
         columns={
             "MycoBank #": "mb_id",
             "Current MycoBank #": "current_mb_id",
-            "Classification": "classification",
+            "Classification": "classification_raw",
             "Synonymy": "synonyms",
             "Authors": "authors",
             "Year of effective publication": "year",
@@ -209,8 +209,8 @@ def main():
                 )
                 row_changed = True
 
-            if (val := _txt(row.get("classification"))) and val != taxon.classification:
-                taxon.classification = val
+            if (val := _txt(row.get("classification_raw"))) and val != taxon.classification_raw:
+                taxon.classification_raw = val
                 row_changed = True
 
             raw_synonyms = _txt(row.get("synonyms"))
