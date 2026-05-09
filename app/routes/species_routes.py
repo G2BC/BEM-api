@@ -81,6 +81,7 @@ class SpeciesSearchList(MethodView):
     def get(self):
         search = request.args.get("search", type=str)
         country = request.args.get("country", type=str)
+        bem = request.args.get("bem", type=str)
         page = request.args.get("page", type=int)
         per_page = request.args.get("per_page", type=int)
         distributions_raw = request.args.get("distributions", type=str)
@@ -93,6 +94,7 @@ class SpeciesSearchList(MethodView):
             return SpeciesService.search(
                 search=search,
                 country=country,
+                bem=bem,
                 is_visible=is_visible,
                 page=page,
                 per_page=per_page,

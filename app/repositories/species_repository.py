@@ -35,6 +35,7 @@ class SpeciesRepository:
         cls,
         search: str | None = "",
         country: str | None = "",
+        bem: str | None = "",
         is_visible: bool | None = None,
         page: int | None = None,
         per_page: int | None = None,
@@ -68,6 +69,9 @@ class SpeciesRepository:
 
         if country:
             filters.append(Species.type_country.ilike(f"%{country}%"))
+
+        if bem:
+            filters.append(Species.bem == bem)
 
         if is_visible is not None:
             filters.append(Species.is_visible.is_(is_visible))
