@@ -14,6 +14,10 @@ class Species(db.Model):
 
     id = db.Column(db.BigInteger, primary_key=True)
     uid = db.Column(db.String(36), nullable=False, default=generate_uuid)
+    bem = db.Column(db.Text, nullable=True)
+    brazilian_type = db.Column(db.Text, nullable=True)
+    brazilian_type_synonym = db.Column(db.Text, nullable=True)
+    dna = db.Column(db.Text, nullable=True)
 
     # Identidade científica
     scientific_name = db.Column(db.Text, nullable=True)
