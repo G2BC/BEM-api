@@ -1,6 +1,7 @@
 from sqlalchemy.sql import func
 
 from app.extensions import db
+from app.utils.generate_uuid import generate_uuid
 
 
 class Species(db.Model):
@@ -12,6 +13,7 @@ class Species(db.Model):
     )
 
     id = db.Column(db.BigInteger, primary_key=True)
+    uid = db.Column(db.String(36), nullable=False, default=generate_uuid)
 
     # Identidade científica
     scientific_name = db.Column(db.Text, nullable=True)
