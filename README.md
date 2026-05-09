@@ -1,4 +1,4 @@
-# LUMM-server
+# BEM-api
 
 ## Requisitos
 
@@ -11,8 +11,8 @@
 ### 1. Clonar o repositório
 
 ```bash
-git clone git@github.com:G2BC/LUMM-server.git
-cd LUMM-server
+git clone git@github.com:G2BC/BEM-api.git
+cd BEM-api
 ```
 
 ### 2. Sincronizar dependências
@@ -75,6 +75,30 @@ uv run flask db migrate -m "mensagem"
 ```bash
 uv run flask db upgrade
 ```
+
+### Sincronizações externas
+
+Os syncs podem ser executados localmente com `uv run python scripts/<script>.py`.
+Quando quiser limitar a execução a espécies específicas, use `BEM_ID` com os IDs internos da
+tabela `species` ou `BEM` com os códigos BEM.
+
+Exemplos:
+
+```bash
+BEM_ID=1 uv run python scripts/sync_mycobank.py
+BEM=BEM1 uv run python scripts/sync_mycobank.py
+```
+
+Para a IUCN Red List, informe também a chave da API:
+
+```bash
+IUCN_API_KEY="sua-chave" BEM_ID=1 uv run python scripts/sync_iucn_red_list.py
+IUCN_API_KEY="sua-chave" BEM=BEM1 uv run python scripts/sync_iucn_red_list.py
+```
+
+Se a IUCN retornar HTML com `Just a moment...`, a requisição local foi bloqueada pelo
+Cloudflare. Nesse caso, o código pode estar correto mesmo com `HTTP 403`; teste em outra rede
+ou rode o workflow no runner self-hosted.
 
 ### Desativar o ambiente virtual
 
