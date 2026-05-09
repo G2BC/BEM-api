@@ -22,18 +22,15 @@ class Species(db.Model):
 
     # IDs externos
     mycobank_index_fungorum_id = db.Column(db.BigInteger)
-    mycobank_type = db.Column(db.Text)
-    ncbi_taxonomy_id = db.Column(db.BigInteger, unique=True)
     inaturalist_taxon_id = db.Column(db.BigInteger, unique=True)
-    iucn_redlist = db.Column(db.Text)
+    ncbi_taxonomy_id = db.Column(db.BigInteger, unique=True)
     unite_taxon_id = db.Column(db.BigInteger, unique=True)
+    iucn_redlist = db.Column(db.Text)
+    mushroom_observer_name_id = db.Column(db.BigInteger, nullable=True, unique=True)
 
     # Flags
     is_visible = db.Column(db.Boolean, nullable=False, server_default=db.false())
     is_outdated_mycobank = db.Column(db.Boolean, nullable=False, server_default=db.false())
-
-    # IDs externos adicionais
-    mushroom_observer_name_id = db.Column(db.BigInteger, nullable=True, unique=True)
 
     # Sync timestamps
     last_inaturalist_sync_at = db.Column(db.DateTime(timezone=True), nullable=True)

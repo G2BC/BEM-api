@@ -89,7 +89,6 @@ class SpeciesPatchRequestSchema(Schema):
     scientific_name = fields.String(required=False, allow_none=True)
     type_country = fields.String(required=False, allow_none=True)
     mycobank_index_fungorum_id = fields.Raw(required=False, allow_none=True)
-    mycobank_type = fields.String(required=False, allow_none=True)
     ncbi_taxonomy_id = fields.Raw(required=False, allow_none=True)
     inaturalist_taxon_id = fields.Raw(required=False, allow_none=True)
     unite_taxon_id = fields.Raw(required=False, allow_none=True)
@@ -295,7 +294,6 @@ class SpeciesWithPhotosSchema(Schema):
     season_start_month = fields.Method("get_season_start_month", allow_none=True)
     season_end_month = fields.Method("get_season_end_month", allow_none=True)
     type_country = fields.String(allow_none=True)
-    mycobank_type = fields.String(allow_none=True)
     mycobank_index_fungorum_id = fields.String(allow_none=True)
     species_characteristics = fields.Nested(
         SpeciesCharacteristicsSchema,
@@ -461,7 +459,6 @@ class SpeciesDetailSchema(Schema):
     is_visible = fields.Boolean()
     ncbi_taxonomy_id = fields.Integer(allow_none=True)
     type_country = fields.String(allow_none=True)
-    mycobank_type = fields.String(allow_none=True)
     mycobank_index_fungorum_id = fields.String(allow_none=True)
     is_outdated_mycobank = fields.Boolean(allow_none=True)
     iucn_redlist = fields.String(allow_none=True)

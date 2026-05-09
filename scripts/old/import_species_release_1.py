@@ -91,7 +91,6 @@ def main():
             obj.distribution_regions = obj.distribution_regions or []
 
             obj.mycobank_index_fungorum_id = _i(row.get("MycoBank_IndexFungorumID"))
-            obj.mycobank_type = _txt(row.get("MycoBankType"))
             obj.ncbi_taxonomy_id = _i(row.get("NCBITaxonomyID"))
             obj.inaturalist_taxon_id = _i(row.get("iNaturalistTaxa"))
             obj.iucn_redlist = _txt(row.get("IUCNRedList"))
