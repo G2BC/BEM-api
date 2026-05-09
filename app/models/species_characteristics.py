@@ -9,12 +9,6 @@ class SpeciesCharacteristics(db.Model):
         db.ForeignKey("species.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    lum_mycelium = db.Column(db.Boolean)
-    lum_basidiome = db.Column(db.Boolean)
-    lum_stipe = db.Column(db.Boolean)
-    lum_pileus = db.Column(db.Boolean)
-    lum_lamellae = db.Column(db.Boolean)
-    lum_spores = db.Column(db.Boolean)
     edible = db.Column(db.Boolean)
     cultivation_possible = db.Column(db.Boolean)
     cultivation = db.Column(db.Text)

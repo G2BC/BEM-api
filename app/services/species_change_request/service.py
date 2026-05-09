@@ -16,12 +16,6 @@ class SpeciesChangeRequestService:
     MAX_PER_PAGE = 100
     ALLOWED_SPECIES_FIELDS = {
         "scientific_name",
-        "lum_mycelium",
-        "lum_basidiome",
-        "lum_stipe",
-        "lum_pileus",
-        "lum_lamellae",
-        "lum_spores",
         "edible",
         "cultivation",
         "cultivation_pt",

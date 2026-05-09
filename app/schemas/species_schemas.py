@@ -95,12 +95,6 @@ class SpeciesPatchRequestSchema(Schema):
     is_visible = fields.Boolean(required=False)
     is_outdated_mycobank = fields.Boolean(required=False)
 
-    lum_mycelium = fields.Boolean(required=False, allow_none=True)
-    lum_basidiome = fields.Boolean(required=False, allow_none=True)
-    lum_stipe = fields.Boolean(required=False, allow_none=True)
-    lum_pileus = fields.Boolean(required=False, allow_none=True)
-    lum_lamellae = fields.Boolean(required=False, allow_none=True)
-    lum_spores = fields.Boolean(required=False, allow_none=True)
     edible = fields.Boolean(required=False, allow_none=True)
     cultivation_possible = fields.Boolean(required=False, allow_none=True)
 
@@ -159,12 +153,6 @@ class SpeciesSelectSchema(Schema):
 
 class SpeciesCharacteristicsSchema(Schema):
     species_id = fields.Integer(allow_none=True)
-    lum_mycelium = fields.Boolean(allow_none=True)
-    lum_basidiome = fields.Boolean(allow_none=True)
-    lum_stipe = fields.Boolean(allow_none=True)
-    lum_pileus = fields.Boolean(allow_none=True)
-    lum_lamellae = fields.Boolean(allow_none=True)
-    lum_spores = fields.Boolean(allow_none=True)
     edible = fields.Boolean(allow_none=True)
     cultivation = fields.String(allow_none=True)
     cultivation_pt = fields.String(allow_none=True)
@@ -268,12 +256,6 @@ class SpeciesWithPhotosSchema(Schema):
     id = fields.Integer(dump_only=True)
     scientific_name = fields.String(allow_none=True)
     is_visible = fields.Boolean()
-    lum_mycelium = fields.Method("get_lum_mycelium", allow_none=True)
-    lum_basidiome = fields.Method("get_lum_basidiome", allow_none=True)
-    lum_stipe = fields.Method("get_lum_stipe", allow_none=True)
-    lum_pileus = fields.Method("get_lum_pileus", allow_none=True)
-    lum_lamellae = fields.Method("get_lum_lamellae", allow_none=True)
-    lum_spores = fields.Method("get_lum_spores", allow_none=True)
     edible = fields.Method("get_edible", allow_none=True)
     cultivation = fields.Method("get_cultivation", allow_none=True)
     finding_tips = fields.Method("get_finding_tips", allow_none=True)
@@ -324,24 +306,6 @@ class SpeciesWithPhotosSchema(Schema):
         if characteristics is not None:
             return getattr(characteristics, field_name, None)
         return None
-
-    def get_lum_mycelium(self, obj):
-        return self._get_characteristic_value(obj, "lum_mycelium")
-
-    def get_lum_basidiome(self, obj):
-        return self._get_characteristic_value(obj, "lum_basidiome")
-
-    def get_lum_stipe(self, obj):
-        return self._get_characteristic_value(obj, "lum_stipe")
-
-    def get_lum_pileus(self, obj):
-        return self._get_characteristic_value(obj, "lum_pileus")
-
-    def get_lum_lamellae(self, obj):
-        return self._get_characteristic_value(obj, "lum_lamellae")
-
-    def get_lum_spores(self, obj):
-        return self._get_characteristic_value(obj, "lum_spores")
 
     def get_edible(self, obj):
         return self._get_characteristic_value(obj, "edible")

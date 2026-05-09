@@ -79,13 +79,6 @@ def main():
 
             obj.authors_abbrev = _txt(row.get("AUTHORS (abbreviated)"))
             obj.publication_year = _i(row.get("YEAR (of effective publication)"))
-            obj.lum_mycelium = _b(row.get("luminescent_mycelium"))
-            obj.lum_basidiome = _b(row.get("luminescent_basidiome"))
-            obj.lum_stipe = _b(row.get("luminescent_stipe"))
-            obj.lum_pileus = _b(row.get("luminescent_pileus"))
-            obj.lum_lamellae = _b(row.get("luminescent_lamellae"))
-            obj.lum_spores = _b(row.get("luminescent_spores"))
-
             obj.type_country = _txt(row.get("TypeCountry"))
 
             obj.distribution_regions = obj.distribution_regions or []

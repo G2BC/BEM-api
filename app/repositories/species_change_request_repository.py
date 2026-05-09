@@ -21,12 +21,6 @@ class SpeciesChangeRequestRepository:
         "decay_type_ids": DecayType,
     }
     CHARACTERISTICS_FIELDS = {
-        "lum_mycelium",
-        "lum_basidiome",
-        "lum_stipe",
-        "lum_pileus",
-        "lum_lamellae",
-        "lum_spores",
         "edible",
         "cultivation_possible",
         "cultivation",

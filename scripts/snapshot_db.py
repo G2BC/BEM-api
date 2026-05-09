@@ -122,14 +122,6 @@ def _build_row_pt(s) -> dict:
             "Autores": t.authors if t else None,
         },
         "Características": {
-            "Anatomia bioluminescente": {
-                "Micélio": c.lum_mycelium if c else None,
-                "Basidioma": c.lum_basidiome if c else None,
-                "Estipe (Caule)": c.lum_stipe if c else None,
-                "Píleo (Chapéu)": c.lum_pileus if c else None,
-                "Lamelas": c.lum_lamellae if c else None,
-                "Esporos": c.lum_spores if c else None,
-            },
             "Biomas": [h.label_pt for h in c.habitats] if c else [],
             "Forma de crescimento": [g.label_pt for g in c.growth_forms] if c else [],
             "Substrato": [sub.label_pt for sub in c.substrates] if c else [],
@@ -184,14 +176,6 @@ def _build_row_en(s) -> dict:
             "Authors": t.authors if t else None,
         },
         "Characteristics": {
-            "Bioluminescent anatomy": {
-                "Mycelium": c.lum_mycelium if c else None,
-                "Basidiome": c.lum_basidiome if c else None,
-                "Stipe (Stem)": c.lum_stipe if c else None,
-                "Pileus (Cap)": c.lum_pileus if c else None,
-                "Lamellae": c.lum_lamellae if c else None,
-                "Spores": c.lum_spores if c else None,
-            },
             "Biomes": [h.label_en for h in c.habitats] if c else [],
             "Growth form": [g.label_en for g in c.growth_forms] if c else [],
             "Substrate": [sub.label_en for sub in c.substrates] if c else [],
