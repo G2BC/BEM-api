@@ -258,6 +258,7 @@ class SpeciesWithPhotosSchema(Schema):
     brazilian_type = fields.String(allow_none=True)
     brazilian_type_synonym = fields.String(allow_none=True)
     is_visible = fields.Boolean()
+    observations_count = fields.Integer(dump_only=True)
     cultivation = fields.Method("get_cultivation", allow_none=True)
     finding_tips = fields.Method("get_finding_tips", allow_none=True)
     nearby_trees = fields.Method("get_nearby_trees", allow_none=True)

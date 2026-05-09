@@ -41,6 +41,14 @@ class SpeciesRepository:
         per_page: int | None = None,
         distributions: list[str] | None = None,
     ):
+        observations_count = (
+            db.session.query(
+                Observation.species_id,
+                func.count(Observation.id).label("observations_count"),
+            )
+            .group_by(Observation.species_id)
+            .subquery()
+        )
         has_any_photo = exists().where(SpeciesPhoto.species_id == Species.id)
         photo_priority = case(
             (Species.id == 116, 0),
@@ -48,19 +56,35 @@ class SpeciesRepository:
             else_=2,
         )
 
-        base = Species.query.options(
-            selectinload(Species.photos),
-            selectinload(Species.characteristics).selectinload(
-                SpeciesCharacteristics.nutrition_modes
-            ),
-            selectinload(Species.characteristics).selectinload(SpeciesCharacteristics.habitats),
-            selectinload(Species.characteristics).selectinload(SpeciesCharacteristics.growth_forms),
-            selectinload(Species.characteristics).selectinload(SpeciesCharacteristics.substrates),
-            selectinload(Species.characteristics).selectinload(SpeciesCharacteristics.decay_types),
-            selectinload(Species.similar_species_links).selectinload(
-                SpeciesSimilarity.similar_species
-            ),
-        ).order_by(photo_priority, Species.scientific_name.asc())
+        base = (
+            db.session.query(
+                Species,
+                func.coalesce(observations_count.c.observations_count, 0).label(
+                    "observations_count"
+                ),
+            )
+            .outerjoin(observations_count, observations_count.c.species_id == Species.id)
+            .options(
+                selectinload(Species.photos),
+                selectinload(Species.characteristics).selectinload(
+                    SpeciesCharacteristics.nutrition_modes
+                ),
+                selectinload(Species.characteristics).selectinload(SpeciesCharacteristics.habitats),
+                selectinload(Species.characteristics).selectinload(
+                    SpeciesCharacteristics.growth_forms
+                ),
+                selectinload(Species.characteristics).selectinload(
+                    SpeciesCharacteristics.substrates
+                ),
+                selectinload(Species.characteristics).selectinload(
+                    SpeciesCharacteristics.decay_types
+                ),
+                selectinload(Species.similar_species_links).selectinload(
+                    SpeciesSimilarity.similar_species
+                ),
+            )
+            .order_by(photo_priority, Species.scientific_name.asc())
+        )
 
         filters = []
 
@@ -85,9 +109,17 @@ class SpeciesRepository:
             base = base.filter(*filters)
 
         if page:
-            return base.paginate(page=page, per_page=per_page, error_out=False)
+            result = base.paginate(page=page, per_page=per_page, error_out=False)
+            result.items = [cls._attach_observations_count(row) for row in result.items]
+            return result
 
-        return base.all()
+        return [cls._attach_observations_count(row) for row in base.all()]
+
+    @staticmethod
+    def _attach_observations_count(row):
+        species, observations_count = row
+        species.observations_count = int(observations_count or 0)
+        return species
 
     @classmethod
     def statistics(cls) -> dict[str, int]:
