@@ -1,0 +1,115 @@
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: ["CD"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag da release para deploy (ex: v1.6.7)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  packages: read
+  actions: read
+
+jobs:
+  deploy:
+    name: Deploy on self-hosted runner
+    runs-on: self-hosted
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+
+    env:
+      APP_DIR: ${{ vars.APP_DIR }}
+      APP_IMAGE: ${{ vars.APP_IMAGE }}
+      DOTENV_KEY: ${{ secrets.DOTENV_KEY }}
+      SERVICE: api
+
+    steps:
+      - name: Login on GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Prepare repository
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          git config --global --add safe.directory "${{ env.APP_DIR }}"
+          git fetch --tags origin
+          git fetch --prune origin
+
+      - name: Download release metadata from CD run
+        if: ${{ github.event_name == 'workflow_run' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: release-meta
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: /tmp/release-meta
+
+      - name: Resolve deploy tag
+        id: tag
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            TAG="${{ github.event.inputs.tag }}"
+          else
+            if [ -f /tmp/release-meta/tag.txt ]; then
+              TAG="$(cat /tmp/release-meta/tag.txt)"
+            else
+              echo "Artifact de tag não encontrado para o run do CD."
+              exit 1
+            fi
+          fi
+
+          if [ -z "$TAG" ]; then
+            echo "Nenhuma tag de deploy foi encontrada."
+            exit 1
+          fi
+
+          if ! git rev-parse -q --verify "refs/tags/${TAG}" > /dev/null; then
+            echo "Tag inválida ou inexistente no repositório: ${TAG}"
+            exit 1
+          fi
+
+          echo "value=${TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout release tag on deployment directory
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          git checkout -f "${{ steps.tag.outputs.value }}"
+
+      - name: Pull tagged image
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          IMAGE_REPO="${APP_IMAGE:-ghcr.io/g2bc/lumm-server}"
+          docker pull "${IMAGE_REPO}:${{ steps.tag.outputs.value }}"
+
+      - name: Update image and restart container
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          IMAGE_REPO="${APP_IMAGE:-ghcr.io/g2bc/lumm-server}"
+          APP_IMAGE="${IMAGE_REPO}" IMAGE_TAG="${{ steps.tag.outputs.value }}" \
+            docker compose up -d --no-deps --pull always --wait --wait-timeout 120 "$SERVICE"
+
+      - name: Run database migrations
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          IMAGE_REPO="${APP_IMAGE:-ghcr.io/g2bc/lumm-server}"
+          APP_IMAGE="${IMAGE_REPO}" IMAGE_TAG="${{ steps.tag.outputs.value }}" \
+            docker compose exec -T "$SERVICE" flask db upgrade
+
+      - name: Show logs on failure
+        if: failure()
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          docker compose ps
+          docker compose logs --tail=200 "$SERVICE" || true
+
+      - name: Clean up old images
+        run: docker image prune -f

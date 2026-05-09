@@ -1,0 +1,50 @@
+name: Restart Container
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: restart-container-api
+  cancel-in-progress: false
+
+jobs:
+  restart:
+    name: Restart container on self-hosted runner
+    runs-on: self-hosted
+
+    env:
+      APP_DIR: ${{ vars.APP_DIR }}
+      DOTENV_KEY: ${{ secrets.DOTENV_KEY }}
+      SERVICE: api
+
+    steps:
+      - name: Validate inputs
+        run: |
+          if [ -z "$APP_DIR" ]; then
+            echo "APP_DIR variable is not configured."
+            exit 1
+          fi
+
+          echo "Restarting service: $SERVICE"
+
+      - name: Restart service
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          git config --global --add safe.directory "$APP_DIR"
+          docker compose ps "$SERVICE"
+          docker compose restart "$SERVICE"
+          docker compose up -d --no-deps --wait --wait-timeout 120 "$SERVICE"
+
+      - name: Show service status
+        working-directory: ${{ env.APP_DIR }}
+        run: docker compose ps "$SERVICE"
+
+      - name: Show logs on failure
+        if: failure()
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          docker compose ps "$SERVICE" || true
+          docker compose logs --tail=200 "$SERVICE" || true

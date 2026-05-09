@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+.env.me
+
+.DS_Store
+.ruff_cache/
+docker/dev/db-backup/*
+!docker/dev/db-backup/.gitkeep
+docker/dev/minio/policies/*
+!docker/dev/minio/policies/.gitkeep
+
+.env*
+.flaskenv*
+!.env.project
+!.env.vault

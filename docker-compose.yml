@@ -1,0 +1,29 @@
+version: "3.9"
+
+services:
+  api:
+    image: ${APP_IMAGE:-ghcr.io/g2bc/bem-server}:${IMAGE_TAG:-latest}
+    container_name: bem-server
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      DOTENV_KEY: ${DOTENV_KEY:?DOTENV_KEY is required}
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - default
+      - redis_shared
+      - minio_default
+      - g2bc_db
+
+networks:
+  redis_shared:
+    external: true
+    name: redis-shared
+  minio_default:
+    external: true
+    name: minio_default
+  g2bc_db:
+    external: true
+    name: g2bc_db

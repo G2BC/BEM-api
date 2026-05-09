@@ -1,0 +1,120 @@
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: bem-db-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_INIT_BACKUP_DIR: /backups
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/dev/postgres/init:/docker-entrypoint-initdb.d:ro
+      - ./docker/dev/db-backup:/backups:ro
+    healthcheck:
+      test:
+        ["CMD-SHELL", 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 8s
+
+  redis:
+    image: redis:7-alpine
+    container_name: bem-redis-dev
+    restart: unless-stopped
+    command: ["sh", "-c", 'redis-server --requirepass "$${REDIS_PASSWORD}"']
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", 'redis-cli -a "$${REDIS_PASSWORD}" ping | grep PONG']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+  minio:
+    image: minio/minio:latest
+    container_name: bem-minio-dev
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?MINIO_ROOT_USER is required}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD is required}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:9000/minio/health/ready"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+  minio-init:
+    image: minio/mc:latest
+    container_name: bem-minio-init-dev
+    restart: "no"
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?MINIO_ROOT_USER is required}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD is required}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:?MINIO_ACCESS_KEY is required}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:?MINIO_SECRET_KEY is required}
+      MINIO_TMP_BUCKET: ${MINIO_TMP_BUCKET:?MINIO_TMP_BUCKET is required}
+      MINIO_FINAL_BUCKET: ${MINIO_FINAL_BUCKET:?MINIO_FINAL_BUCKET is required}
+      MINIO_DB_BUCKET: ${MINIO_DB_BUCKET:?MINIO_DB_BUCKET is required}
+    volumes:
+      - ./docker/dev/minio/policies:/policies:ro
+      - ./docker/dev/minio/init-minio.sh:/init-minio.sh:ro
+    entrypoint: ["/bin/sh", "/init-minio.sh"]
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: bem-api-dev
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      APP_ENV: development
+      DATABASE_URL: postgresql://${POSTGRES_USER:?POSTGRES_USER is required}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@db:5432/${POSTGRES_DB:?POSTGRES_DB is required}
+      REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379/0
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:?MINIO_ACCESS_KEY is required}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:?MINIO_SECRET_KEY is required}
+      MINIO_TMP_BUCKET: ${MINIO_TMP_BUCKET:?MINIO_TMP_BUCKET is required}
+      MINIO_FINAL_BUCKET: ${MINIO_FINAL_BUCKET:?MINIO_FINAL_BUCKET is required}
+      MINIO_ENDPOINT: minio:9000
+      MINIO_PUBLIC_BASE_URL: ${MINIO_PUBLIC_BASE_URL:-http://localhost:9000}
+      MINIO_SECURE: "false"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    volumes:
+      - .:/app
+    ports:
+      - "4000:4000"
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:

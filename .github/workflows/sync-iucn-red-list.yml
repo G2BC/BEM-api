@@ -1,0 +1,46 @@
+name: Sync IUCN Red List
+
+on:
+  workflow_dispatch:
+    inputs:
+      lumm_id:
+        description: "LUMM species ID(s) separados por vírgula, ex: 1 ou 1,2,3 (deixe vazio para sincronizar todas)"
+        required: false
+        type: string
+  schedule:
+    - cron: "0 4 1 * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sync-iucn-red-list
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    runs-on: self-hosted
+    container:
+      image: python:3.12-slim
+      options: --network lumm-ci
+    timeout-minutes: 30
+    env:
+      DOTENV_KEY: ${{ secrets.DOTENV_KEY }}
+      APP_ENV: production
+      PYTHONUNBUFFERED: "1"
+      LUMM_ID: ${{ inputs.lumm_id }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Python version
+        run: python --version
+
+      - name: Install dependencies
+        run: |
+          pip install --user uv
+          ~/.local/bin/uv sync --frozen --no-dev
+
+      - name: Run sync script
+        run: ~/.local/bin/uv run python scripts/sync_iucn_red_list.py

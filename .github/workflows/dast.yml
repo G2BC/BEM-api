@@ -1,0 +1,51 @@
+name: DAST
+
+on:
+  workflow_run:
+    workflows: ["Deploy"]
+    types: [completed]
+  schedule:
+    - cron: "0 5 4,18 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  zap_scan:
+    runs-on: ubuntu-latest
+
+    if: >
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.conclusion == 'success')
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: OWASP ZAP API Scan (prod)
+        uses: zaproxy/action-api-scan@v0.9.0
+        env:
+          ZAP_AUTH_HEADER: X-API-Key
+          ZAP_AUTH_HEADER_VALUE: ${{ secrets.API_KEY }}
+        with:
+          target: ${{ secrets.DAST_TARGET }}
+          cmd_options: "-I"
+          allow_issue_writing: false
+          artifact_name: "dast"
+
+      - name: Collect DAST reports
+        run: |
+          mkdir -p artifacts
+          mv zap_report.* artifacts/ || true
+
+      - name: Upload DAST Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-dast
+          path: artifacts/*
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker rm -f api || true

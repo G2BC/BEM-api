@@ -1,0 +1,31 @@
+{
+  "name": "LUMM Server",
+  "dockerComposeFile": [
+    "../docker-compose.dev.yml"
+  ],
+  "service": "api",
+  "runServices": [
+    "db",
+    "redis",
+    "minio",
+    "minio-init",
+    "api"
+  ],
+  "workspaceFolder": "/app",
+  "shutdownAction": "stopCompose",
+  "overrideCommand": false,
+  "postCreateCommand": "uv sync --dev",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "python.defaultInterpreterPath": "/opt/venv/bin/python",
+        "python.terminal.activateEnvironment": false
+      },
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "charliermarsh.ruff"
+      ]
+    }
+  }
+}
