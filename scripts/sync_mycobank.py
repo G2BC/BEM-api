@@ -1,8 +1,8 @@
 import math
 import os
+import re
 import shutil
 import sys
-import re
 from pathlib import Path
 from zipfile import ZipFile
 
@@ -13,21 +13,32 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from app import create_app
-from app.extensions import db
-from app.models.species import Species
-from app.models.taxon import Taxon
+from app import create_app  # noqa: E402
+from app.extensions import db  # noqa: E402
+from app.models.species import Species  # noqa: E402
+from app.models.taxon import Taxon  # noqa: E402
 
 MBLIST_URL = "https://www.MycoBank.org/images/MBList.zip"
 MBLIST_SHEET = "Sheet1"
 
 app = create_app()
 
-_txt = (
-    lambda v: (s := str(v).strip()) and s
-    if v not in (None, "") and not (isinstance(v, float) and math.isnan(v))
-    else None
+TAXONOMY_FIELDS = (
+    "kingdom",
+    "phylum",
+    "class_name",
+    "order",
+    "family",
+    "genus",
+    "specific_epithet",
 )
+
+def _txt(v):
+    if v in (None, "") or (isinstance(v, float) and math.isnan(v)):
+        return None
+
+    value = str(v).strip()
+    return value or None
 
 
 def _i(v):
@@ -41,6 +52,66 @@ def _i(v):
 
 def _log(message: str, level: str = "INFO") -> None:
     print(f"[{level}] {message}")
+
+
+def parse_classification_raw(value: str | None) -> dict[str, str | None]:
+    classification = _txt(value)
+    if not classification:
+        return {}
+
+    parts = [
+        part
+        for part in (normalize_text(part) for part in re.split(r"\s*[;|,]\s*", classification))
+        if part
+    ]
+
+    if not parts:
+        return {}
+
+    parsed = {"kingdom": parts[0]}
+    lineage_parts = parts[1:]
+
+    if len(parts) > 2 and parts[-1][:1].islower() and not _is_rank_name(parts[-1]):
+        parsed["genus"] = parts[-2]
+        parsed["specific_epithet"] = parts[-1]
+        lineage_parts = parts[1:-2]
+    elif len(parts) > 1:
+        parsed["genus"] = parts[-1]
+        lineage_parts = parts[1:-1]
+
+    for part in lineage_parts:
+        if part.endswith("mycota"):
+            parsed["phylum"] = part
+        elif part.endswith("mycetes"):
+            parsed["class_name"] = part
+        elif part.endswith("ales"):
+            parsed["order"] = part
+        elif part.endswith("aceae"):
+            parsed["family"] = part
+
+    return parsed
+
+
+def _is_rank_name(value: str) -> bool:
+    return value.endswith(("mycota", "mycetes", "ales", "aceae"))
+
+
+def parse_specific_epithet(taxon_name: str | None) -> str | None:
+    value = _txt(taxon_name)
+    if not value:
+        return None
+
+    parts = [part for part in re.split(r"\s+", value) if part]
+    if len(parts) < 2:
+        return None
+
+    candidate = parts[1]
+    if candidate in {"subsp.", "ssp.", "var.", "f.", "forma"}:
+        return None
+    if not re.match(r"^[a-z][a-z-]*$", candidate):
+        return None
+
+    return candidate
 
 
 def download_and_read_mblist_filtered(
@@ -137,6 +208,7 @@ def parse_basionym_and_synonyms(text: str) -> tuple[str | None, str | None]:
 
     return basionym, synonyms
 
+
 def normalize_text(value):
     if value is None:
         return None
@@ -144,28 +216,49 @@ def normalize_text(value):
     value = value.strip()
     return value or None
 
+
+def sync_text_field(target, field_name: str, value: str | None) -> bool:
+    if value != getattr(target, field_name):
+        setattr(target, field_name, value)
+        return True
+    return False
+
+
+def parse_csv_values(value: str | None) -> list[str]:
+    return [part for raw in (value or "").split(",") if (part := raw.strip())]
+
+
 def main():
-    raw_lumm_ids = os.environ.get("LUMM_ID", "")
-    lumm_ids = [v for raw in raw_lumm_ids.split(",") if (v := _i(raw.strip()))]
+    bem_ids = [v for raw in (os.environ.get("BEM_ID") or "").split(",") if (v := _i(raw.strip()))]
+    bem_codes = parse_csv_values(os.environ.get("BEM"))
 
     _log("=== Sync MycoBank: inicio ===")
-    if lumm_ids:
-        _log(f"Modo individual: LUMM_IDs={lumm_ids}")
+    if bem_ids:
+        _log(f"Modo individual: BEM_IDs={bem_ids}")
+    if bem_codes:
+        _log(f"Modo individual: BEMs={bem_codes}")
     _log("Carregando chaves do banco")
     with app.app_context():
         query = db.session.query(
             Species.id,
+            Species.bem,
             Species.scientific_name,
             Species.mycobank_index_fungorum_id,
             Species.is_outdated_mycobank,
         ).filter(Species.mycobank_index_fungorum_id.isnot(None))
 
-        if lumm_ids:
-            query = query.filter(Species.id.in_(lumm_ids))
+        if bem_ids:
+            query = query.filter(Species.id.in_(bem_ids))
+        if bem_codes:
+            query = query.filter(Species.bem.in_(bem_codes))
 
         species_rows = query.all()
 
-    mb_ids = {_i(r.mycobank_index_fungorum_id) for r in species_rows if _i(r.mycobank_index_fungorum_id)}
+    mb_ids = {
+        _i(r.mycobank_index_fungorum_id)
+        for r in species_rows
+        if _i(r.mycobank_index_fungorum_id)
+    }
     _log(f"Especies com MycoBank ID no banco: {len(mb_ids)}", "OK")
 
     _log("=== Coleta do MBList ===")
@@ -179,7 +272,11 @@ def main():
 
     with app.app_context():
         _log("=== Sincronizacao no banco ===")
-        species_by_mb = {_i(r.mycobank_index_fungorum_id): r for r in species_rows if _i(r.mycobank_index_fungorum_id)}
+        species_by_mb = {
+            _i(r.mycobank_index_fungorum_id): r
+            for r in species_rows
+            if _i(r.mycobank_index_fungorum_id)
+        }
         total_rows = len(df)
 
         for idx, row in enumerate(df.to_dict(orient="records"), start=1):
@@ -209,9 +306,21 @@ def main():
                 )
                 row_changed = True
 
-            if (val := _txt(row.get("classification_raw"))) and val != taxon.classification_raw:
-                taxon.classification_raw = val
+            classification_raw = _txt(row.get("classification_raw"))
+            if classification_raw and classification_raw != taxon.classification_raw:
+                taxon.classification_raw = classification_raw
                 row_changed = True
+
+            parsed_classification = parse_classification_raw(classification_raw)
+            if specific_epithet := parse_specific_epithet(row.get("taxon_name")):
+                parsed_classification["specific_epithet"] = specific_epithet
+
+            for field in TAXONOMY_FIELDS:
+                if field not in parsed_classification:
+                    continue
+                val = parsed_classification[field]
+                if sync_text_field(taxon, field, val):
+                    row_changed = True
 
             raw_synonyms = _txt(row.get("synonyms"))
             if raw_synonyms:
