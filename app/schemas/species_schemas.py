@@ -253,6 +253,7 @@ class SpeciesCharacteristicsSchema(Schema):
 class SpeciesWithPhotosSchema(Schema):
     id = fields.Integer(dump_only=True)
     scientific_name = fields.String(allow_none=True)
+    common_name = fields.String(allow_none=True)
     is_visible = fields.Boolean()
     cultivation = fields.Method("get_cultivation", allow_none=True)
     finding_tips = fields.Method("get_finding_tips", allow_none=True)
@@ -398,6 +399,13 @@ class SpeciesWithPhotosSchema(Schema):
 SpeciesWithPhotosPaginationSchema = make_pagination_schema(SpeciesWithPhotosSchema)
 
 
+class SpeciesStatisticsSchema(Schema):
+    edible_brazil_species = fields.Integer(dump_only=True)
+    observations = fields.Integer(dump_only=True)
+    extinction_risk_species = fields.Integer(dump_only=True)
+    brazilian_type_species = fields.Integer(dump_only=True)
+
+
 class SpeciesOutdatedSchema(Schema):
     id = fields.Integer(dump_only=True)
     scientific_name = fields.String(dump_only=True)
@@ -410,6 +418,7 @@ SpeciesOutdatedPaginationSchema = make_pagination_schema(SpeciesOutdatedSchema)
 class SpeciesDetailSchema(Schema):
     id = fields.Integer(dump_only=True)
     scientific_name = fields.String(allow_none=True)
+    common_name = fields.String(allow_none=True)
     is_visible = fields.Boolean()
     ncbi_taxonomy_id = fields.Integer(allow_none=True)
     type_country = fields.String(allow_none=True)

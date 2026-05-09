@@ -75,6 +75,10 @@ class SpeciesService:
         return SpeciesRepository.distributions_select()
 
     @staticmethod
+    def statistics() -> dict[str, int]:
+        return SpeciesRepository.statistics()
+
+    @staticmethod
     def species_select(
         search: str | None = "",
         exclude_species_id: int | None = None,

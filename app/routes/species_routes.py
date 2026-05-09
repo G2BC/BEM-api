@@ -36,6 +36,7 @@ from app.schemas.species_schemas import (
     SpeciesPhotoUpdateRequestSchema,
     SpeciesPhotoUploadUrlPayloadSchema,
     SpeciesSelectSchema,
+    SpeciesStatisticsSchema,
     SpeciesWithPhotosPaginationSchema,
 )
 from app.services.cache_service import CacheService
@@ -156,6 +157,13 @@ class SpeciesDistributionsSelect(MethodView):
     @specie_bp.response(200, DistributionSchema(many=True))
     def get(self):
         return SpeciesService.distributions_select()
+
+
+@specie_bp.route("/statistics")
+class SpeciesStatistics(MethodView):
+    @specie_bp.response(200, SpeciesStatisticsSchema)
+    def get(self):
+        return SpeciesService.statistics()
 
 
 @specie_bp.route("/outdated")

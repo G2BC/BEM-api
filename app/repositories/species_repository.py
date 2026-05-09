@@ -4,6 +4,7 @@ from app.models.distribution import Distribution
 from app.models.growth_form import GrowthForm
 from app.models.habitat import Habitat
 from app.models.nutrition_mode import NutritionMode
+from app.models.observation import Observation
 from app.models.reference import Reference  # noqa: F401 – needed for selectinload
 from app.models.species import Species
 from app.models.species_characteristics import SpeciesCharacteristics
@@ -11,7 +12,7 @@ from app.models.species_photo import SpeciesPhoto
 from app.models.species_similarity import SpeciesSimilarity
 from app.models.substrate import Substrate
 from app.utils.object_storage import normalize_object_url
-from sqlalchemy import case, exists, or_
+from sqlalchemy import case, exists, func, or_
 from sqlalchemy.orm import selectinload
 
 
@@ -22,6 +23,11 @@ class SpeciesRepository:
         "substrate": Substrate,
         "habitat": Habitat,
         "decay_type": DecayType,
+    }
+    THREATENED_IUCN_CATEGORIES = {
+        "CR",
+        "EN",
+        "VU",
     }
 
     @classmethod
@@ -78,6 +84,29 @@ class SpeciesRepository:
             return base.paginate(page=page, per_page=per_page, error_out=False)
 
         return base.all()
+
+    @classmethod
+    def statistics(cls) -> dict[str, int]:
+        is_bem = Species.bem.in_(["BEM1", "BEM2", "BEM3", "BEM4", "BEM5", "BEM6"])
+        is_brazilian_type = (Species.brazilian_type == 'T') | (Species.brazilian_type_synonym == 'TS')
+        normalized_iucn = func.upper(func.trim(Species.iucn_redlist))
+
+        species_counts = Species.query.with_entities(
+            func.count(Species.id).filter(is_bem).label("edible_brazil_species"),
+            func.count(Species.id)
+            .filter(normalized_iucn.in_(cls.THREATENED_IUCN_CATEGORIES))
+            .label("extinction_risk_species"),
+            func.count(Species.id).filter(is_brazilian_type).label("brazilian_type_species"),
+        ).one()
+
+        observations = Observation.query.with_entities(func.count(Observation.id)).scalar() or 0
+
+        return {
+            "edible_brazil_species": int(species_counts.edible_brazil_species or 0),
+            "observations": int(observations),
+            "extinction_risk_species": int(species_counts.extinction_risk_species or 0),
+            "brazilian_type_species": int(species_counts.brazilian_type_species or 0),
+        }
 
     @classmethod
     def get(cls, species: str | None = "", is_visible: bool | None = None):
