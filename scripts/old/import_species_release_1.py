@@ -79,7 +79,6 @@ def main():
 
             obj.authors_abbrev = _txt(row.get("AUTHORS (abbreviated)"))
             obj.publication_year = _i(row.get("YEAR (of effective publication)"))
-            obj.lineage = _txt(row.get("LINEAGE"))
             obj.family = _txt(row.get("FAMILY"))
             obj.group_name = _txt(row.get("GROUP"))
             obj.section = _txt(row.get("SECTION"))

@@ -79,7 +79,6 @@ class SpeciesSearchList(MethodView):
     @specie_bp.alt_response(400, description="Parâmetros inválidos")
     def get(self):
         search = request.args.get("search", type=str)
-        lineage = request.args.get("lineage", type=str)
         country = request.args.get("country", type=str)
         page = request.args.get("page", type=int)
         per_page = request.args.get("per_page", type=int)
@@ -91,7 +90,12 @@ class SpeciesSearchList(MethodView):
         try:
             is_visible = _parse_optional_bool_query("is_visible")
             return SpeciesService.search(
-                search, lineage, country, is_visible, page, per_page, distributions
+                search=search,
+                country=country,
+                is_visible=is_visible,
+                page=page,
+                per_page=per_page,
+                distributions=distributions,
             )
         except AppError as exc:
             return bilingual_response(exc.status, exc.pt, exc.en)
@@ -109,14 +113,6 @@ class SpeciesCreate(MethodView):
             return SpeciesService.create(payload)
         except AppError as exc:
             return bilingual_response(exc.status, exc.pt, exc.en)
-
-
-@specie_bp.route("/lineage/select")
-class LineageSelect(MethodView):
-    @specie_bp.response(200, SelectSchema(many=True))
-    def get(self):
-        search = request.args.get("search", type=str)
-        return SpeciesService.select_lineage(search)
 
 
 @specie_bp.route("/country/select")

@@ -32,7 +32,6 @@ class SpeciesService:
     def search(
         cls,
         search: str | None = "",
-        lineage: str | None = "",
         country: str | None = "",
         is_visible: bool | None = None,
         page: int | None = None,
@@ -40,7 +39,6 @@ class SpeciesService:
         distributions: list[str] | None = None,
     ) -> dict[str, Any]:
         search = (search or "").strip()
-        lineage = (lineage or "").strip()
         country = (country or "").strip()
 
         if is_visible is not None and not isinstance(is_visible, bool):
@@ -54,7 +52,12 @@ class SpeciesService:
             per_page = per_page or cls.DEFAULT_PER_PAGE
 
         result = SpeciesRepository.list(
-            search, lineage, country, is_visible, page, per_page, distributions
+            search=search,
+            country=country,
+            is_visible=is_visible,
+            page=page,
+            per_page=per_page,
+            distributions=distributions,
         )
         return build_page_response(result, page, per_page)
 
@@ -63,10 +66,6 @@ class SpeciesService:
         page, per_page = resolve_page_params(page, per_page, default_per_page=cls.DEFAULT_PER_PAGE)
         result = SpeciesRepository.list_outdated(page, per_page)
         return build_page_response(result, page, per_page)
-
-    @staticmethod
-    def select_lineage(search: str | None = ""):
-        return SpeciesRepository.lineage_select(search)
 
     @staticmethod
     def country_select(search: str | None = ""):
@@ -110,11 +109,6 @@ class SpeciesService:
     @classmethod
     def create(cls, payload: dict[str, Any]):
         normalized_payload = cls._normalize_patch_payload(payload or {})
-        lineage = normalized_payload.get("lineage")
-        if not isinstance(lineage, str) or not lineage.strip():
-            raise AppError(pt="`lineage` é obrigatório", en="`lineage` is required")
-        normalized_payload["lineage"] = lineage.strip()
-
         mycobank_index_fungorum_id = normalized_payload.get("mycobank_index_fungorum_id")
         if mycobank_index_fungorum_id is None:
             raise AppError(
@@ -138,7 +132,6 @@ class SpeciesService:
         distribution_ids = normalized_payload.pop("distributions", None)
         species = Species(
             scientific_name=normalized_payload.get("scientific_name"),
-            lineage=normalized_payload["lineage"],
             mycobank_index_fungorum_id=mycobank_index_fungorum_id,
         )
 

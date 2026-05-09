@@ -28,7 +28,6 @@ class SpeciesRepository:
     def list(
         cls,
         search: str | None = "",
-        lineage: str | None = "",
         country: str | None = "",
         is_visible: bool | None = None,
         page: int | None = None,
@@ -64,9 +63,6 @@ class SpeciesRepository:
 
         if search := (search or "").strip():
             filters.append(Species.scientific_name.ilike(f"%{search}%"))
-
-        if lineage:
-            filters.append(Species.lineage.ilike(f"%{lineage}%"))
 
         if country:
             filters.append(Species.type_country.ilike(f"%{country}%"))
@@ -120,23 +116,6 @@ class SpeciesRepository:
             base = base.filter(Species.scientific_name.ilike(f"%{name}%"))
 
         return base.first()
-
-    @classmethod
-    def lineage_select(cls, search: str | None = ""):
-        search = (search or "").strip()
-
-        query = Species.query.with_entities(Species.lineage).distinct()
-
-        if search:
-            query = query.filter(Species.lineage.ilike(f"%{search}%"))
-
-        query = query.order_by(Species.lineage.asc())
-
-        lineages = query.all()
-
-        options = [{"label": lineage, "value": lineage} for (lineage,) in lineages if lineage]
-
-        return options
 
     @classmethod
     def country_select(

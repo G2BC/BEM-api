@@ -302,7 +302,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/species/list?search=&lineage=&country=&page=1&per_page=10",
+              "raw": "{{baseUrl}}/species/list?search=&country=&page=1&per_page=10",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -316,10 +316,6 @@
                   "value": ""
                 },
                 {
-                  "key": "lineage",
-                  "value": ""
-                },
-                {
                   "key": "country",
                   "value": ""
                 },
@@ -330,35 +326,6 @@
                 {
                   "key": "per_page",
                   "value": "10"
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "GET /species/lineage/select",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "X-API-Key",
-                "value": "{{apiKey}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/species/lineage/select?search=",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "species",
-                "lineage",
-                "select"
-              ],
-              "query": [
-                {
-                  "key": "search",
-                  "value": ""
                 }
               ]
             }

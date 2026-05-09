@@ -98,7 +98,6 @@ def _build_row_pt(s) -> dict:
     return {
         "LUMM_ID": s.id,
         "Nome científico": s.scientific_name,
-        "Linhagem": s.lineage,
         "Família": s.family,
         "Grupo": s.group_name,
         "Seção": s.section,
@@ -156,7 +155,6 @@ def _build_row_en(s) -> dict:
     return {
         "LUMM_ID": s.id,
         "Scientific name": s.scientific_name,
-        "Lineage": s.lineage,
         "Family": s.family,
         "Group": s.group_name,
         "Section": s.section,
