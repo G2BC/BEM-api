@@ -40,7 +40,7 @@ jobs:
           context: .
           file: ./Dockerfile
           push: false
-          tags: ghcr.io/${{ steps.image_meta.outputs.owner }}/lumm-server:ci
+          tags: ghcr.io/${{ steps.image_meta.outputs.owner }}/bem-api:ci
 
   scan:
     if: "${{ !startsWith(github.event.pull_request.title, 'chore(main): release') }}"
@@ -92,14 +92,14 @@ jobs:
 
       - name: Trivy image
         run: |
-          docker build -t ghcr.io/${{ steps.image_meta.outputs.owner }}/lumm-server:ci .
+          docker build -t ghcr.io/${{ steps.image_meta.outputs.owner }}/bem-api:ci .
 
-          trivy image ghcr.io/${{ steps.image_meta.outputs.owner }}/lumm-server:ci \
+          trivy image ghcr.io/${{ steps.image_meta.outputs.owner }}/bem-api:ci \
             --severity LOW,MEDIUM,HIGH,CRITICAL \
             --ignore-unfixed \
             -f table -o artifacts/trivy-image.txt || true
 
-          trivy image ghcr.io/${{ steps.image_meta.outputs.owner }}/lumm-server:ci \
+          trivy image ghcr.io/${{ steps.image_meta.outputs.owner }}/bem-api:ci \
             --severity LOW,MEDIUM,HIGH,CRITICAL \
             --ignore-unfixed \
             -f json -o artifacts/trivy-image.json || echo '{}' > artifacts/trivy-image.json

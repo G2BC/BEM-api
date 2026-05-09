@@ -46,7 +46,7 @@ BOLD_SKIP_PREPROCESSOR = os.getenv("BOLD_SKIP_PREPROCESSOR", "").strip().lower()
     "true",
     "yes",
 }
-HEADERS = {"User-Agent": "LUMM-server/1.0 (lumm.uneb.br; contact: lumm.g2bc@gmail.com)"}
+HEADERS = {"User-Agent": "BEM-api/1.0 (bem.uneb.br; contact: bem.g2bc@gmail.com)"}
 
 app = create_app()
 
@@ -493,8 +493,8 @@ def _sync_species(species_id, scientific_name, start_time):
 def main():
     start_time = time.time()
 
-    raw_lumm_ids = os.getenv("LUMM_ID", "")
-    lumm_ids = [int(v) for raw in raw_lumm_ids.split(",") if (v := raw.strip()).isdigit()]
+    raw_bem_ids = os.getenv("BEM_ID", "")
+    bem_ids = [int(v) for raw in raw_bem_ids.split(",") if (v := raw.strip()).isdigit()]
 
     _log("=== Sync BOLD ===")
     _log(
@@ -508,8 +508,8 @@ def main():
         query = db.session.query(Species.id, Species.scientific_name).filter(
             Species.scientific_name.isnot(None)
         )
-        if lumm_ids:
-            query = query.filter(Species.id.in_(lumm_ids))
+        if bem_ids:
+            query = query.filter(Species.id.in_(bem_ids))
         species_rows = query.all()
 
     _log(f"Espécies: {len(species_rows)}")

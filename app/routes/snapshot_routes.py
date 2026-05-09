@@ -68,7 +68,7 @@ class SnapshotDownload(MethodView):
                     "No snapshots available at this time",
                 )
 
-        key = f"v{version}/{lang}/lumm.{fmt}"
+        key = f"v{version}/{lang}/bem.{fmt}"
 
         try:
             url = generate_presigned_get_url(bucket, key, _DOWNLOAD_EXPIRES_SECONDS)

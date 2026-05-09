@@ -1,33 +1,34 @@
 """
 Gera snapshot do banco em XLSX e JSON (PT e EN) e faz upload no MinIO.
 """
+# ruff: noqa: E402,I001
 
 from __future__ import annotations
 
 import io
 import json
 import os
+import sys
 from datetime import UTC, datetime
 from pathlib import Path
-import sys
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-import pandas as pd
-from minio import Minio
-from sqlalchemy.orm import joinedload, selectinload
+from minio import Minio  # noqa: E402
+import pandas as pd  # noqa: E402
+from sqlalchemy.orm import joinedload, selectinload  # noqa: E402
 
-from app import create_app
-from app.models.species import Species
-from app.models.species_characteristics import SpeciesCharacteristics
+from app import create_app  # noqa: E402
+from app.models.species import Species  # noqa: E402
+from app.models.species_characteristics import SpeciesCharacteristics  # noqa: E402
 
 
 app = create_app()
 
-REPORT_BUCKET = os.getenv("MINIO_DB_BUCKET", "lumm-db")
-FILE_PREFIX = "lumm"
+REPORT_BUCKET = os.getenv("MINIO_DB_BUCKET", "bem-db")
+FILE_PREFIX = "bem"
 
 
 def _log(message: str, level: str = "INFO") -> None:
@@ -96,7 +97,7 @@ def _build_row_pt(s) -> dict:
     t = s.taxonomy
     c = s.characteristics
     return {
-        "LUMM_ID": s.id,
+        "BEM_ID": s.id,
         "Nome científico": s.scientific_name,
         "País do espécime tipo": s.type_country,
         "MycoBank #": _id(s.mycobank_index_fungorum_id),
@@ -139,8 +140,12 @@ def _build_row_pt(s) -> dict:
             "Altura média do basidioma (cm)": c.size_cm if c else None,
             "Estação de frutificação (Início)": c.season_start_month if c else None,
             "Estação de frutificação (Fim)": c.season_end_month if c else None,
-            "Regiões biogeográficas de ocorrência": [f"({d.slug}) {d.label_pt}" for d in s.distributions],
-            "Espécies similares (LUMM_ID)": [_id(link.similar_species_id) for link in s.similar_species_links],
+            "Regiões biogeográficas de ocorrência": [
+                f"({d.slug}) {d.label_pt}" for d in s.distributions
+            ],
+            "Espécies similares (BEM_ID)": [
+                _id(link.similar_species_id) for link in s.similar_species_links
+            ],
         },
     }
 
@@ -149,7 +154,7 @@ def _build_row_en(s) -> dict:
     t = s.taxonomy
     c = s.characteristics
     return {
-        "LUMM_ID": s.id,
+        "BEM_ID": s.id,
         "Scientific name": s.scientific_name,
         "Type specimen country": s.type_country,
         "MycoBank #": _id(s.mycobank_index_fungorum_id),
@@ -192,8 +197,12 @@ def _build_row_en(s) -> dict:
             "Mean basidiome height (cm)": c.size_cm if c else None,
             "Fruiting season start": c.season_start_month if c else None,
             "Fruiting season end": c.season_end_month if c else None,
-            "Biogeographic regions of occurrence": [f"({d.slug}) {d.label_en}" for d in s.distributions],
-            "Similar species (LUMM_ID)": [_id(link.similar_species_id) for link in s.similar_species_links],
+            "Biogeographic regions of occurrence": [
+                f"({d.slug}) {d.label_en}" for d in s.distributions
+            ],
+            "Similar species (BEM_ID)": [
+                _id(link.similar_species_id) for link in s.similar_species_links
+            ],
         },
     }
 
@@ -206,7 +215,12 @@ def collect_data() -> tuple[list[dict], list[dict]]:
     return data_pt, data_en
 
 
-def build_files(data: list[dict], lang: str, version: int, generated_at: datetime) -> tuple[bytes, bytes]:
+def build_files(
+    data: list[dict],
+    lang: str,
+    version: int,
+    generated_at: datetime,
+) -> tuple[bytes, bytes]:
     """Gera os bytes do XLSX e JSON para um idioma."""
     if not data:
         raise ValueError("Nenhum dado para gerar os arquivos")
@@ -220,19 +234,23 @@ def build_files(data: list[dict], lang: str, version: int, generated_at: datetim
     ]))
 
     df_taxonomy = _fix_int_columns(pd.DataFrame([
-        {"LUMM_ID": row["LUMM_ID"], **row[taxonomy_key]}
+        {"BEM_ID": row["BEM_ID"], **row[taxonomy_key]}
         for row in data
     ]))
 
     df_characteristics = _fix_int_columns(pd.DataFrame([
-        {"LUMM_ID": row["LUMM_ID"], **{k: _fmt(v) for k, v in row[characteristics_key].items()}}
+        {"BEM_ID": row["BEM_ID"], **{k: _fmt(v) for k, v in row[characteristics_key].items()}}
         for row in data
     ]))
 
     # XLSX — 3 sheets
     xlsx_buffer = io.BytesIO()
     with pd.ExcelWriter(xlsx_buffer, engine="openpyxl") as writer:
-        sheet_names = ("Espécies", "Taxonomia", "Características") if lang == "pt" else ("Species", "Taxonomy", "Characteristics")
+        sheet_names = (
+            ("Espécies", "Taxonomia", "Características")
+            if lang == "pt"
+            else ("Species", "Taxonomy", "Characteristics")
+        )
         df_species.to_excel(writer, index=False, sheet_name=sheet_names[0])
         df_taxonomy.to_excel(writer, index=False, sheet_name=sheet_names[1])
         df_characteristics.to_excel(writer, index=False, sheet_name=sheet_names[2])
@@ -260,16 +278,22 @@ def upload_lang(client, data: list[dict], lang: str, version: int, now: datetime
     base = f"v{version}/{lang}/{FILE_PREFIX}"
     _log(f"Gerando arquivos [{lang.upper()}]...")
     xlsx_bytes, json_bytes = build_files(data, lang, version, now)
-    upload(client, REPORT_BUCKET, f"{base}.xlsx", xlsx_bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    upload(
+        client,
+        REPORT_BUCKET,
+        f"{base}.xlsx",
+        xlsx_bytes,
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
     upload(client, REPORT_BUCKET, f"{base}.json", json_bytes, "application/json")
     _log(f"Snapshot {base} concluído", "OK")
 
 
 def main() -> None:
-    _log("=== lumm snapshot: início ===")
+    _log("=== bem snapshot: início ===")
 
     now = datetime.now(UTC)
-    version = int(os.getenv("LUMM_DB_VERSION", "1"))
+    version = int(os.getenv("BEM_DB_VERSION", "1"))
 
     with app.app_context():
         _log("Coletando dados...")
@@ -283,7 +307,7 @@ def main() -> None:
     upload_lang(client, data_pt, "pt", version, now)
     upload_lang(client, data_en, "en", version, now)
 
-    _log("=== lumm_db snapshot: fim ===")
+    _log("=== bem_db snapshot: fim ===")
 
 
 if __name__ == "__main__":

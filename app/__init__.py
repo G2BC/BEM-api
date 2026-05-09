@@ -111,7 +111,7 @@ def create_app():
 
     @app.route("/", methods=["GET"])
     def index():
-        return {"name": "LUMM API"}, 200
+        return {"name": "BEM API"}, 200
 
     @app.route("/health", methods=["GET"])
     def health():

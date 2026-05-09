@@ -5,11 +5,12 @@ Exemplo:
     export ONLY_CC="true" # pular fotos sem licença CC
     export SLEEP_SEC="1.0" # pausa entre chamadas
     export PHOTO_LIMIT="0" # 0 = todas; >0 = máx de fotos por espécie
-    export INAT_USER_AGENT="PlanneoLUMM/1.0 (seu-email@dominio)"
+    export INAT_USER_AGENT="BEM-api/1.0 (seu-email@dominio)"
     export LIMIT_SPECIES="0" # 0=todas; >0 = processa apenas N espécies (debug)
 
     python import_inaturalist_photos_release_1.py
 """
+# ruff: noqa
 
 import os
 import sys
@@ -36,7 +37,7 @@ PHOTO_LIMIT = int(os.getenv("PHOTO_LIMIT", "0"))
 LIMIT_SPECIES = int(os.getenv("LIMIT_SPECIES", "0"))
 USER_AGENT = os.getenv(
     "INAT_USER_AGENT",
-    os.getenv("USER_AGENT", "LUMM/1.0 (lumm@uneb.br)"),
+    os.getenv("USER_AGENT", "BEM-api/1.0 (bem@uneb.br)"),
 )
 
 

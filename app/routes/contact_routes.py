@@ -35,7 +35,7 @@ class Contact(MethodView):
 
         try:
             send_email(
-                subject="[LUMM] Contato",
+                subject="[BEM] Contato",
                 content=f"""
                     <html>
                         <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; line-height:1.6;">

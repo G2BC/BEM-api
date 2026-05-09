@@ -87,20 +87,20 @@ jobs:
       - name: Pull tagged image
         working-directory: ${{ env.APP_DIR }}
         run: |
-          IMAGE_REPO="${APP_IMAGE:-ghcr.io/g2bc/lumm-server}"
+          IMAGE_REPO="${APP_IMAGE:-ghcr.io/g2bc/bem-api}"
           docker pull "${IMAGE_REPO}:${{ steps.tag.outputs.value }}"
 
       - name: Update image and restart container
         working-directory: ${{ env.APP_DIR }}
         run: |
-          IMAGE_REPO="${APP_IMAGE:-ghcr.io/g2bc/lumm-server}"
+          IMAGE_REPO="${APP_IMAGE:-ghcr.io/g2bc/bem-api}"
           APP_IMAGE="${IMAGE_REPO}" IMAGE_TAG="${{ steps.tag.outputs.value }}" \
             docker compose up -d --no-deps --pull always --wait --wait-timeout 120 "$SERVICE"
 
       - name: Run database migrations
         working-directory: ${{ env.APP_DIR }}
         run: |
-          IMAGE_REPO="${APP_IMAGE:-ghcr.io/g2bc/lumm-server}"
+          IMAGE_REPO="${APP_IMAGE:-ghcr.io/g2bc/bem-api}"
           APP_IMAGE="${IMAGE_REPO}" IMAGE_TAG="${{ steps.tag.outputs.value }}" \
             docker compose exec -T "$SERVICE" flask db upgrade
 

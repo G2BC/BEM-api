@@ -22,11 +22,11 @@ jobs:
     runs-on: self-hosted
     container:
       image: python:3.12-slim
-      options: --network lumm-ci
+      options: --network bem-ci
     timeout-minutes: 30
     env:
       DOTENV_KEY: ${{ secrets.DOTENV_KEY }}
-      LUMM_DB_VERSION: ${{ inputs.version }}
+      BEM_DB_VERSION: ${{ inputs.version }}
       APP_ENV: production
       UV_LINK_MODE: copy
 

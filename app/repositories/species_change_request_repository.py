@@ -274,7 +274,7 @@ class SpeciesChangeRequestRepository:
                 rights_holder=(photo_request.rights_holder or "").strip() or None,
                 source_url=photo_request.source_url,
                 declaration_accepted_at=photo_request.declaration_accepted_at,
-                source="LUMM-Upload",
+                source="BEM-Upload",
             )
         )
         return True

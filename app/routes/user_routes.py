@@ -73,8 +73,8 @@ class ApproveUser(MethodView):
                     <tr>
                         <td align="center" style="padding: 28px 28px 0 28px;">
                             <img
-                                src="https://lumm.uneb.br/lumm512_rounded.png"
-                                alt="LUMM"
+                                src="https://bem.uneb.br/bem512_rounded.png"
+                                alt="BEM"
                                 width="140"
                                 style="display:block;border:0;outline:none;text-decoration:none;max-width:140px;height:auto;"
                             >
@@ -85,7 +85,7 @@ class ApproveUser(MethodView):
                     <tr>
                         <td align="center" style="padding: 8px 28px 0 28px;">
                             <a
-                                href="https://lumm.uneb.br/login"
+                                href="https://bem.uneb.br/login"
                                 target="_blank"
                                 style="
                                     display:inline-block;
@@ -104,7 +104,7 @@ class ApproveUser(MethodView):
                     </tr>
                 """
             send_email(
-                subject="[LUMM] Registration Approved",
+                subject="[BEM] Registration Approved",
                 content=f"""
                     <!DOCTYPE html>
                     <html lang="en">
@@ -126,14 +126,14 @@ class ApproveUser(MethodView):
                                                         <td style="padding:28px 28px 12px 28px;font-family:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;color:#111827;">
                                                             <h1 style="margin:0 0 12px 0;font-size:24px;line-height:1.2;font-weight:700;">Registration approved</h1>
                                                             <p style="margin:0 0 12px 0;font-size:16px;line-height:1.6;">Hi, <strong>{name}</strong>.</p>
-                                                            <p style="margin:0;font-size:16px;line-height:1.6;">Your registration on the LUMM platform has been approved.</p>
+                                                            <p style="margin:0;font-size:16px;line-height:1.6;">Your registration on the BEM platform has been approved.</p>
                                                         </td>
                                                     </tr>
                                                     {cta_html}
                                                     <tr>
                                                         <td style="padding:20px 28px 28px 28px;font-family:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;color:#374151;">
                                                             <hr style="border:none;border-top:1px solid #e5e7eb;margin:0 0 16px 0;">
-                                                            <p style="margin:0;font-size:14px;line-height:1.5;text-align:center;">&copy; {current_year} Luminescent Mushrooms</p>
+                                                            <p style="margin:0;font-size:14px;line-height:1.5;text-align:center;">&copy; {current_year} BEM</p>
                                                         </td>
                                                     </tr>
                                                 </tbody>

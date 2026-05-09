@@ -70,6 +70,6 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: |
-            ghcr.io/${{ steps.image_meta.outputs.owner }}/lumm-server:${{ steps.meta.outputs.tag }}
-            ghcr.io/${{ steps.image_meta.outputs.owner }}/lumm-server:${{ github.sha }}
-            ghcr.io/${{ steps.image_meta.outputs.owner }}/lumm-server:latest
+            ghcr.io/${{ steps.image_meta.outputs.owner }}/bem-api:${{ steps.meta.outputs.tag }}
+            ghcr.io/${{ steps.image_meta.outputs.owner }}/bem-api:${{ github.sha }}
+            ghcr.io/${{ steps.image_meta.outputs.owner }}/bem-api:latest

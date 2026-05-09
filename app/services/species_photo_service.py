@@ -20,7 +20,7 @@ class SpeciesPhotoService:
     UPLOAD_HEAD_MAX_ATTEMPTS = 4
     UPLOAD_HEAD_RETRY_SECONDS = 0.35
     OBJECT_PREFIX = "species"
-    SOURCE_LUMM_UPLOAD = "LUMM-Upload"
+    SOURCE_BEM_UPLOAD = "BEM-Upload"
 
     @classmethod
     def generate_upload_url(cls, species_id: int, filename: str, mime_type: str, size_bytes: int):
@@ -177,7 +177,7 @@ class SpeciesPhotoService:
             attribution=attribution,
             rights_holder=rights_holder,
             source_url=source_url,
-            source=cls.SOURCE_LUMM_UPLOAD,
+            source=cls.SOURCE_BEM_UPLOAD,
             featured=featured,
         )
         SpeciesPhotoRepository.save(photo)
@@ -321,7 +321,7 @@ class SpeciesPhotoService:
     @classmethod
     def _is_system_photo_source(cls, photo: SpeciesPhoto) -> bool:
         source = (getattr(photo, "source", None) or "").strip().lower()
-        return source == cls.SOURCE_LUMM_UPLOAD.lower()
+        return source == cls.SOURCE_BEM_UPLOAD.lower()
 
     @classmethod
     def _parse_storage_url(cls, value: str) -> tuple[str | None, str | None]:

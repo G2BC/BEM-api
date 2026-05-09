@@ -1,5 +1,5 @@
 [project]
-name = "bem-server"
+name = "bem-api"
 version = "0.1.0"
 description = "Backend API for BEM"
 requires-python = ">=3.12,<3.13"
