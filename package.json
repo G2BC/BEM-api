@@ -1,6 +1,6 @@
 {
   "name": "bem-server",
-  "version": "1.42.0",
+  "version": "0.1.0",
   "private": true,
   "release": {
     "branches": [
