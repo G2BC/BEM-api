@@ -57,7 +57,7 @@ class SnapshotDownload(MethodView):
                 f"`format` must be one of: {', '.join(sorted(_FORMATS))}",
             )
 
-        bucket = current_app.config.get("MINIO_DB_BUCKET", "lumm-db")
+        bucket = current_app.config.get("MINIO_DB_BUCKET", "bem-db")
 
         if version is None:
             version = _latest_version(bucket)
