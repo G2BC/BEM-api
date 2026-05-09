@@ -21,7 +21,6 @@ class SpeciesChangeRequestRepository:
         "decay_type_ids": DecayType,
     }
     CHARACTERISTICS_FIELDS = {
-        "edible",
         "cultivation_possible",
         "cultivation",
         "cultivation_pt",

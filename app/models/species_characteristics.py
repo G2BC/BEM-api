@@ -9,7 +9,6 @@ class SpeciesCharacteristics(db.Model):
         db.ForeignKey("species.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    edible = db.Column(db.Boolean)
     cultivation_possible = db.Column(db.Boolean)
     cultivation = db.Column(db.Text)
     cultivation_pt = db.Column(db.Text)

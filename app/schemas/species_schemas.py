@@ -95,7 +95,6 @@ class SpeciesPatchRequestSchema(Schema):
     is_visible = fields.Boolean(required=False)
     is_outdated_mycobank = fields.Boolean(required=False)
 
-    edible = fields.Boolean(required=False, allow_none=True)
     cultivation_possible = fields.Boolean(required=False, allow_none=True)
 
     colors = fields.String(required=False, allow_none=True)
@@ -153,7 +152,6 @@ class SpeciesSelectSchema(Schema):
 
 class SpeciesCharacteristicsSchema(Schema):
     species_id = fields.Integer(allow_none=True)
-    edible = fields.Boolean(allow_none=True)
     cultivation = fields.String(allow_none=True)
     cultivation_pt = fields.String(allow_none=True)
     finding_tips = fields.String(allow_none=True)
@@ -256,7 +254,6 @@ class SpeciesWithPhotosSchema(Schema):
     id = fields.Integer(dump_only=True)
     scientific_name = fields.String(allow_none=True)
     is_visible = fields.Boolean()
-    edible = fields.Method("get_edible", allow_none=True)
     cultivation = fields.Method("get_cultivation", allow_none=True)
     finding_tips = fields.Method("get_finding_tips", allow_none=True)
     nearby_trees = fields.Method("get_nearby_trees", allow_none=True)
@@ -306,9 +303,6 @@ class SpeciesWithPhotosSchema(Schema):
         if characteristics is not None:
             return getattr(characteristics, field_name, None)
         return None
-
-    def get_edible(self, obj):
-        return self._get_characteristic_value(obj, "edible")
 
     def get_cultivation(self, obj):
         return self._get_characteristic_value(obj, "cultivation")

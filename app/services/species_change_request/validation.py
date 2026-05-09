@@ -157,12 +157,6 @@ class SpeciesChangeRequestValidation:
     def validate_proposed_data(
         proposed_data: dict[str, Any], species_id: int | None = None
     ) -> None:
-        edible = proposed_data.get("edible")
-        if edible is not None and not isinstance(edible, bool):
-            raise AppError(
-                pt="`edible` deve ser booleano ou null", en="`edible` must be boolean or null"
-            )
-
         size_cm = proposed_data.get("size_cm")
         if size_cm is not None:
             if isinstance(size_cm, bool) or not isinstance(size_cm, int | float):

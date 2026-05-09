@@ -16,7 +16,6 @@ class SpeciesChangeRequestService:
     MAX_PER_PAGE = 100
     ALLOWED_SPECIES_FIELDS = {
         "scientific_name",
-        "edible",
         "cultivation",
         "cultivation_pt",
         "finding_tips",
