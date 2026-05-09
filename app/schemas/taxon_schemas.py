@@ -16,5 +16,4 @@ class TaxonSchema(Schema):
     basionym = fields.String(allow_none=True, dump_only=True)
     authors = fields.String(allow_none=True, dump_only=True)
     gender = fields.String(allow_none=True, dump_only=True)
-    name_status = fields.String(allow_none=True, dump_only=True)
     years_of_effective_publication = fields.String(allow_none=True, dump_only=True)
