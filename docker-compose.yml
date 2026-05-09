@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   api:
     image: ${APP_IMAGE:-ghcr.io/g2bc/bem-server}:${IMAGE_TAG:-latest}
