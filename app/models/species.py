@@ -9,7 +9,6 @@ class Species(db.Model):
     __table_args__ = (
         db.UniqueConstraint("scientific_name", name="uq_species_scientific_name"),
         db.UniqueConstraint("uid", name="uq_species_uid"),
-        db.UniqueConstraint("common_name", name="uq_species_common_name"),
     )
 
     id = db.Column(db.BigInteger, primary_key=True)
