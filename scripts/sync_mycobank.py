@@ -33,6 +33,7 @@ TAXONOMY_FIELDS = (
     "specific_epithet",
 )
 
+
 def _txt(v):
     if v in (None, "") or (isinstance(v, float) and math.isnan(v)):
         return None
@@ -69,31 +70,52 @@ def parse_classification_raw(value: str | None) -> dict[str, str | None]:
         return {}
 
     parsed = {"kingdom": parts[0]}
-    lineage_parts = parts[1:]
-
-    if len(parts) > 2 and parts[-1][:1].islower() and not _is_rank_name(parts[-1]):
-        parsed["genus"] = parts[-2]
-        parsed["specific_epithet"] = parts[-1]
-        lineage_parts = parts[1:-2]
-    elif len(parts) > 1:
+    if len(parts) > 1:
         parsed["genus"] = parts[-1]
-        lineage_parts = parts[1:-1]
 
-    for part in lineage_parts:
-        if part.endswith("mycota"):
+    for part in parts[1:-1]:
+        lower_part = part.lower()
+        if lower_part.endswith("mycota"):
             parsed["phylum"] = part
-        elif part.endswith("mycetes"):
+        elif lower_part.endswith("mycetes"):
             parsed["class_name"] = part
-        elif part.endswith("ales"):
+        elif lower_part.endswith("ales"):
             parsed["order"] = part
-        elif part.endswith("aceae"):
+        elif lower_part.endswith("aceae"):
             parsed["family"] = part
 
     return parsed
 
 
-def _is_rank_name(value: str) -> bool:
-    return value.endswith(("mycota", "mycetes", "ales", "aceae"))
+def find_ambiguous_taxonomy_ranks(value: str | None) -> dict[str, list[str]]:
+    classification = _txt(value)
+    if not classification:
+        return {}
+
+    parts = [
+        part
+        for part in (normalize_text(part) for part in re.split(r"\s*[;|,]\s*", classification))
+        if part
+    ]
+    candidates = {
+        "phylum": [],
+        "class_name": [],
+        "order": [],
+        "family": [],
+    }
+
+    for part in parts[1:-1]:
+        lower_part = part.lower()
+        if lower_part.endswith("mycota"):
+            candidates["phylum"].append(part)
+        elif lower_part.endswith("mycetes"):
+            candidates["class_name"].append(part)
+        elif lower_part.endswith("ales"):
+            candidates["order"].append(part)
+        elif lower_part.endswith("aceae"):
+            candidates["family"].append(part)
+
+    return {field: values for field, values in candidates.items() if len(values) > 1}
 
 
 def parse_specific_epithet(taxon_name: str | None) -> str | None:
@@ -112,6 +134,50 @@ def parse_specific_epithet(taxon_name: str | None) -> str | None:
         return None
 
     return candidate
+
+
+def parse_genus_from_taxon_name(taxon_name: str | None) -> str | None:
+    value = _txt(taxon_name)
+    if not value:
+        return None
+
+    parts = [part for part in re.split(r"\s+", value) if part]
+    return parts[0] if parts else None
+
+
+def warn_missing_taxonomy_fields(
+    mb_id: int,
+    parsed_classification: dict,
+    classification: str,
+) -> None:
+    missing_fields = [
+        field
+        for field in ("kingdom", "phylum", "class_name", "order", "family")
+        if not parsed_classification.get(field)
+    ]
+    if missing_fields:
+        _log(
+            f"Classification incompleta MycoBank={mb_id} "
+            f"campos_ausentes={','.join(missing_fields)} raw={classification!r}",
+            "WARN",
+        )
+
+
+def warn_ambiguous_taxonomy_ranks(
+    mb_id: int,
+    ambiguous_ranks: dict[str, list[str]],
+    classification: str,
+) -> None:
+    if not ambiguous_ranks:
+        return
+
+    details = "; ".join(
+        f"{field}={','.join(values)}" for field, values in sorted(ambiguous_ranks.items())
+    )
+    _log(
+        f"Classification ambigua MycoBank={mb_id} {details} raw={classification!r}",
+        "WARN",
+    )
 
 
 def download_and_read_mblist_filtered(
@@ -224,6 +290,15 @@ def sync_text_field(target, field_name: str, value: str | None) -> bool:
     return False
 
 
+def scientific_name_exists_for_other_species(species_id: int, scientific_name: str) -> bool:
+    return (
+        db.session.query(Species.id)
+        .filter(Species.id != species_id, Species.scientific_name == scientific_name)
+        .first()
+        is not None
+    )
+
+
 def parse_csv_values(value: str | None) -> list[str]:
     return [part for raw in (value or "").split(",") if (part := raw.strip())]
 
@@ -259,7 +334,8 @@ def main():
         for r in species_rows
         if _i(r.mycobank_index_fungorum_id)
     }
-    _log(f"Especies com MycoBank ID no banco: {len(mb_ids)}", "OK")
+    _log(f"Especies com MycoBank ID no banco: {len(species_rows)}", "OK")
+    _log(f"MycoBank IDs unicos no banco: {len(mb_ids)}", "OK")
 
     _log("=== Coleta do MBList ===")
     _log("Baixando e lendo MBList")
@@ -272,11 +348,18 @@ def main():
 
     with app.app_context():
         _log("=== Sincronizacao no banco ===")
-        species_by_mb = {
-            _i(r.mycobank_index_fungorum_id): r
-            for r in species_rows
-            if _i(r.mycobank_index_fungorum_id)
+        species_by_mb = {}
+        for species_row in species_rows:
+            mb_key = _i(species_row.mycobank_index_fungorum_id)
+            if mb_key:
+                species_by_mb.setdefault(mb_key, []).append(species_row)
+
+        duplicated_mb_ids = {
+            mb_key: rows for mb_key, rows in species_by_mb.items() if len(rows) > 1
         }
+        if duplicated_mb_ids:
+            _log(f"MycoBank IDs duplicados no banco: {len(duplicated_mb_ids)}", "WARN")
+
         total_rows = len(df)
 
         for idx, row in enumerate(df.to_dict(orient="records"), start=1):
@@ -286,41 +369,38 @@ def main():
             if not mb_id:
                 continue
 
-            srow = species_by_mb.get(mb_id)
-            if not srow:
+            matching_species = species_by_mb.get(mb_id, [])
+            if not matching_species:
                 continue
 
-            taxon = Taxon.query.filter_by(species_id=srow.id).one_or_none()
-            row_changed = False
-
-            if not taxon:
-                taxon = Taxon(species_id=srow.id)
-                db.session.add(taxon)
-                inserted += 1
-                row_changed = True
-
-            if (val := _txt(row.get("taxon_name"))) and val != srow.scientific_name:
-                db.session.query(Species).filter_by(id=srow.id).update(
-                    {"scientific_name": val},
-                    synchronize_session=False,
-                )
-                row_changed = True
-
             classification_raw = _txt(row.get("classification_raw"))
-            if classification_raw and classification_raw != taxon.classification_raw:
-                taxon.classification_raw = classification_raw
-                row_changed = True
-
             parsed_classification = parse_classification_raw(classification_raw)
+            if classification_raw:
+                warn_missing_taxonomy_fields(mb_id, parsed_classification, classification_raw)
+                warn_ambiguous_taxonomy_ranks(
+                    mb_id,
+                    find_ambiguous_taxonomy_ranks(classification_raw),
+                    classification_raw,
+                )
+
+            taxon_name_genus = parse_genus_from_taxon_name(row.get("taxon_name"))
+            classification_genus = parsed_classification.get("genus")
+            if (
+                taxon_name_genus
+                and classification_genus
+                and taxon_name_genus != classification_genus
+            ):
+                _log(
+                    f"Genero divergente entre Classification e Taxon name "
+                    f"MycoBank={mb_id} classification={classification_genus!r} "
+                    f"taxon_name={taxon_name_genus!r}",
+                    "WARN",
+                )
+            if taxon_name_genus:
+                parsed_classification["genus"] = taxon_name_genus
+
             if specific_epithet := parse_specific_epithet(row.get("taxon_name")):
                 parsed_classification["specific_epithet"] = specific_epithet
-
-            for field in TAXONOMY_FIELDS:
-                if field not in parsed_classification:
-                    continue
-                val = parsed_classification[field]
-                if sync_text_field(taxon, field, val):
-                    row_changed = True
 
             raw_synonyms = _txt(row.get("synonyms"))
             if raw_synonyms:
@@ -328,45 +408,80 @@ def main():
             else:
                 basionym, synonyms = None, None
 
-            if basionym != taxon.basionym:
-                taxon.basionym = basionym
-                row_changed = True
+            for srow in matching_species:
+                taxon = Taxon.query.filter_by(species_id=srow.id).one_or_none()
+                row_changed = False
 
-            if synonyms != taxon.synonyms:
-                taxon.synonyms = synonyms
-                row_changed = True
+                if not taxon:
+                    taxon = Taxon(species_id=srow.id)
+                    db.session.add(taxon)
+                    inserted += 1
+                    row_changed = True
 
-            if (val := _txt(row.get("authors"))) and val != taxon.authors:
-                taxon.authors = val
-                row_changed = True
+                if (val := _txt(row.get("taxon_name"))) and val != srow.scientific_name:
+                    if scientific_name_exists_for_other_species(srow.id, val):
+                        _log(
+                            f"Nome cientifico ja existe; rename ignorado "
+                            f"species_id={srow.id} nome={val!r}",
+                            "WARN",
+                        )
+                    else:
+                        db.session.query(Species).filter_by(id=srow.id).update(
+                            {"scientific_name": val},
+                            synchronize_session=False,
+                        )
+                        row_changed = True
 
-            if (val := _txt(row.get("year"))) and val != taxon.years_of_effective_publication:
-                taxon.years_of_effective_publication = val
-                row_changed = True
+                if classification_raw and classification_raw != taxon.classification_raw:
+                    taxon.classification_raw = classification_raw
+                    row_changed = True
 
-            is_outdated = (
-                current_mb_id is not None
-                and current_mb_id != _i(srow.mycobank_index_fungorum_id)
-            )
+                for field in TAXONOMY_FIELDS:
+                    if field not in parsed_classification:
+                        continue
+                    val = parsed_classification[field]
+                    if sync_text_field(taxon, field, val):
+                        row_changed = True
 
-            if is_outdated != srow.is_outdated_mycobank:
-                db.session.query(Species).filter_by(id=srow.id).update(
-                    {"is_outdated_mycobank": is_outdated},
-                    synchronize_session=False,
+                if basionym != taxon.basionym:
+                    taxon.basionym = basionym
+                    row_changed = True
+
+                if synonyms != taxon.synonyms:
+                    taxon.synonyms = synonyms
+                    row_changed = True
+
+                if (val := _txt(row.get("authors"))) and val != taxon.authors:
+                    taxon.authors = val
+                    row_changed = True
+
+                if (val := _txt(row.get("year"))) and val != taxon.years_of_effective_publication:
+                    taxon.years_of_effective_publication = val
+                    row_changed = True
+
+                is_outdated = (
+                    current_mb_id is not None
+                    and current_mb_id != _i(srow.mycobank_index_fungorum_id)
                 )
-                row_changed = True
 
-            if taxon.id is not None and row_changed:
-                updated += 1
+                if is_outdated != srow.is_outdated_mycobank:
+                    db.session.query(Species).filter_by(id=srow.id).update(
+                        {"is_outdated_mycobank": is_outdated},
+                        synchronize_session=False,
+                    )
+                    row_changed = True
 
-            linked += 1
-            print(
-                f"[{idx:>5}/{total_rows:<5}] "
-                f"species_id={srow.id} "
-                f"MycoBank={mb_id} "
-                f"Current={current_mb_id} "
-                f"outdated={is_outdated}"
-            )
+                if row_changed:
+                    updated += 1
+
+                linked += 1
+                print(
+                    f"[{idx:>5}/{total_rows:<5}] "
+                    f"species_id={srow.id} "
+                    f"MycoBank={mb_id} "
+                    f"Current={current_mb_id} "
+                    f"outdated={is_outdated}"
+                )
 
         db.session.commit()
     _log("Sincronizacao finalizada", "OK")
