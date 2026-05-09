@@ -12,13 +12,21 @@ Exemplo:
 """
 
 import os
+import sys
 import time
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
 import requests
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 from app import create_app
 from app.extensions import db
-from app.models.species import Species, SpeciesPhoto
+from app.models.species import Species
+from app.models.species_photo import SpeciesPhoto
 
 INAT_API = "https://api.inaturalist.org/v1/taxa"
 
@@ -26,7 +34,10 @@ ONLY_CC = os.getenv("ONLY_CC", "true") == "true"
 SLEEP_SEC = float(os.getenv("SLEEP_SEC", "1.0"))
 PHOTO_LIMIT = int(os.getenv("PHOTO_LIMIT", "0"))
 LIMIT_SPECIES = int(os.getenv("LIMIT_SPECIES", "0"))
-USER_AGENT = os.getenv("USER_AGENT", "LUMM/1.0 (lumm@uneb.br)")
+USER_AGENT = os.getenv(
+    "INAT_USER_AGENT",
+    os.getenv("USER_AGENT", "LUMM/1.0 (lumm@uneb.br)"),
+)
 
 
 def get_session() -> requests.Session:
@@ -48,6 +59,8 @@ def _norm_photo(p: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         "original_url": p.get("original_url"),
         "license_code": p.get("license_code"),
         "attribution": p.get("attribution"),
+        "rights_holder": p.get("rights_holder"),
+        "source_url": p.get("native_page_url") or f"https://www.inaturalist.org/photos/{pid}",
     }
 
 
@@ -120,6 +133,8 @@ def upsert_species_photos(species_id: int, photos: List[Dict[str, Any]]) -> int:
                     "original_url": p.get("original_url"),
                     "license_code": p.get("license_code"),
                     "attribution": p.get("attribution"),
+                    "rights_holder": p.get("rights_holder"),
+                    "source_url": p.get("source_url"),
                 },
                 synchronize_session=False,
             )
@@ -132,6 +147,8 @@ def upsert_species_photos(species_id: int, photos: List[Dict[str, Any]]) -> int:
                     original_url=p.get("original_url"),
                     license_code=p.get("license_code"),
                     attribution=p.get("attribution"),
+                    rights_holder=p.get("rights_holder"),
+                    source_url=p.get("source_url"),
                     source="iNaturalist",
                 )
             )
@@ -164,6 +181,7 @@ def main():
             if LIMIT_SPECIES and processed >= LIMIT_SPECIES:
                 break
             processed += 1
+            ins = 0
 
             try:
                 photos = fetch_taxon_photos(sess, taxon_id)
