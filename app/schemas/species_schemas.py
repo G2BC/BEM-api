@@ -21,7 +21,6 @@ class SpeciesPhotoSchema(Schema):
     declaration_accepted_at = fields.DateTime(allow_none=True, dump_only=True)
     source = fields.String(dump_only=True)
     fetched_at = fields.DateTime(dump_only=True)
-    lumm = fields.Boolean(allow_none=True)
     featured = fields.Boolean(allow_none=True)
 
     @staticmethod
@@ -58,7 +57,6 @@ class SpeciesPhotoCreateRequestSchema(Schema):
     attribution = fields.String(required=True)
     rights_holder = fields.String(required=True)
     source_url = fields.Url(allow_none=True)
-    lumm = fields.Boolean(required=True)
     featured = fields.Boolean(required=True)
 
 
@@ -70,7 +68,6 @@ class SpeciesPhotoUpdateRequestSchema(Schema):
     attribution = fields.String(required=False, allow_none=True)
     rights_holder = fields.String(required=False, allow_none=True)
     source_url = fields.Url(required=False, allow_none=True)
-    lumm = fields.Boolean(required=False)
     featured = fields.Boolean(required=False)
 
     @validates_schema
@@ -314,7 +311,6 @@ class SpeciesWithPhotosSchema(Schema):
                     "rights_holder",
                     "source_url",
                     "declaration_accepted_at",
-                    "lumm",
                     "featured",
                 )
             ),
@@ -485,7 +481,6 @@ class SpeciesDetailSchema(Schema):
                     "rights_holder",
                     "source_url",
                     "declaration_accepted_at",
-                    "lumm",
                     "featured",
                 )
             ),

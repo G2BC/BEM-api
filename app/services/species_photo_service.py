@@ -79,7 +79,6 @@ class SpeciesPhotoService:
         attribution = (payload.get("attribution") or "").strip()
         rights_holder = (payload.get("rights_holder") or "").strip()
         source_url = (payload.get("source_url") or "").strip() or None
-        lumm = bool(payload.get("lumm", True))
         featured = bool(payload.get("featured", False))
 
         if bucket_name != expected_bucket:
@@ -179,7 +178,6 @@ class SpeciesPhotoService:
             rights_holder=rights_holder,
             source_url=source_url,
             source=cls.SOURCE_LUMM_UPLOAD,
-            lumm=lumm,
             featured=featured,
         )
         SpeciesPhotoRepository.save(photo)
@@ -206,8 +204,6 @@ class SpeciesPhotoService:
         if "source_url" in payload:
             value = payload.get("source_url")
             photo.source_url = (value or "").strip() or None
-        if "lumm" in payload:
-            photo.lumm = bool(payload.get("lumm"))
         if "featured" in payload:
             next_featured = bool(payload.get("featured"))
             photo.featured = next_featured

@@ -15,7 +15,6 @@ class SpeciesPhotoRequestInputSchema(Schema):
     attribution = fields.String(allow_none=True)
     rights_holder = fields.String(allow_none=True)
     source_url = fields.Url(allow_none=True)
-    lumm = fields.Boolean(required=False, load_default=True)
     declaration_accepted_at = fields.DateTime(allow_none=True)
 
 
@@ -62,7 +61,6 @@ class SpeciesPhotoRequestSchema(Schema):
     attribution = fields.String(allow_none=True, dump_only=True)
     rights_holder = fields.String(allow_none=True, dump_only=True)
     source_url = fields.String(allow_none=True, dump_only=True)
-    lumm = fields.Boolean(allow_none=True, dump_only=True)
     preview_url = fields.String(allow_none=True, dump_only=True)
     declaration_accepted_at = fields.DateTime(allow_none=True, dump_only=True)
     status = fields.String(dump_only=True)

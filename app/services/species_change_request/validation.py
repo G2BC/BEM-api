@@ -393,16 +393,6 @@ class SpeciesChangeRequestValidation:
                 en=f"Maximum of {max_photos} photos per request",
             )
 
-        for photo in photos_payload:
-            if "lumm" not in photo or photo.get("lumm") is None:
-                photo["lumm"] = True
-                continue
-
-            if not isinstance(photo.get("lumm"), bool):
-                raise AppError(
-                    pt="`photos.lumm` deve ser booleano", en="`photos.lumm` must be boolean"
-                )
-
     # ------------------------------------------------------------------ #
     # Review normalization                                                 #
     # ------------------------------------------------------------------ #

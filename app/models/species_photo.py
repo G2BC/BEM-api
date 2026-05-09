@@ -29,7 +29,6 @@ class SpeciesPhoto(db.Model):
         nullable=False,
         server_default=func.now(),
     )
-    lumm = db.Column(db.Boolean, nullable=True)
     featured = db.Column(db.Boolean, nullable=True)
 
     species = db.relationship("Species", back_populates="photos")
