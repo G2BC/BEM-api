@@ -8,6 +8,7 @@ from app.models.observation import Observation
 from app.models.reference import Reference  # noqa: F401 – needed for selectinload
 from app.models.species import Species
 from app.models.species_characteristics import SpeciesCharacteristics
+from app.models.species_distribution import SpeciesDistribution
 from app.models.species_photo import SpeciesPhoto
 from app.models.species_similarity import SpeciesSimilarity
 from app.models.substrate import Substrate
@@ -235,6 +236,40 @@ class SpeciesRepository:
     def distributions_select(cls):
         distributions = Distribution.query.order_by(Distribution.slug.asc()).all()
         return distributions
+
+    @classmethod
+    def distribution_occurrence_statistics(cls) -> dict[str, dict]:
+        rows = (
+            db.session.query(
+                Distribution.slug.label("distribution"),
+                Species.bem.label("classification"),
+                func.count(Species.id).label("species_count"),
+            )
+            .join(
+                SpeciesDistribution,
+                SpeciesDistribution.distribution_id == Distribution.id,
+            )
+            .join(Species, Species.id == SpeciesDistribution.species_id)
+            .filter(Species.bem.isnot(None), func.trim(Species.bem) != "")
+            .group_by(Distribution.slug, Species.bem)
+            .order_by(Distribution.slug.asc(), Species.bem.asc())
+            .all()
+        )
+
+        statistics: dict[str, dict] = {}
+        for distribution, classification, species_count in rows:
+            distribution_stats = statistics.setdefault(
+                distribution,
+                {
+                    "occurrences_count": 0,
+                    "classifications_count": {},
+                },
+            )
+            count = int(species_count or 0)
+            distribution_stats["occurrences_count"] += count
+            distribution_stats["classifications_count"][classification] = count
+
+        return statistics
 
     @classmethod
     def species_select(

@@ -176,6 +176,13 @@ class SpeciesStatistics(MethodView):
         return SpeciesService.statistics()
 
 
+@specie_bp.route("/distributions/statistics")
+class SpeciesDistributionStatistics(MethodView):
+    @specie_bp.response(200)
+    def get(self):
+        return SpeciesService.distribution_occurrence_statistics()
+
+
 @specie_bp.route("/outdated")
 class SpeciesOutdated(MethodView):
     @require_curator_or_admin
