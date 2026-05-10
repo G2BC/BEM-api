@@ -56,6 +56,7 @@ def _parse_location(location):
 def _fetch_page(taxon_id, id_above):
     params = {
         "taxon_id": taxon_id,
+        "place_id": 6803, #BR
         "has[]": "geo",
         "per_page": PER_PAGE,
         "order": "asc",
