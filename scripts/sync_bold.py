@@ -40,7 +40,7 @@ MAX_WORKERS = int(os.getenv("BOLD_MAX_WORKERS", "2"))
 MAX_RUNTIME_SECONDS = int(os.getenv("BOLD_MAX_RUNTIME_SECONDS", "3540"))
 MAX_RETRIES = int(os.getenv("BOLD_MAX_RETRIES", "3"))
 MAX_RECORDS_PER_SPECIES = int(os.getenv("BOLD_MAX_RECORDS_PER_SPECIES", "20000"))
-BOLD_GEO_QUERY = os.getenv("BOLD_GEO_QUERY", "").strip()
+BOLD_GEO_QUERY = os.getenv("BOLD_GEO_QUERY", "geo:country:Brazil").strip()
 BOLD_SKIP_PREPROCESSOR = os.getenv("BOLD_SKIP_PREPROCESSOR", "").strip().lower() in {
     "1",
     "true",
