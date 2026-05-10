@@ -74,11 +74,15 @@ def _photo_url(obs):
     return url.replace("/orig/", "/640/") if url else None
 
 
+BRAZIL_BBOX = {"north": 5.272, "south": -33.750, "east": -34.793, "west": -73.983}
+
+
 def _fetch_page(name_id, scientific_name, page):
     if name_id:
         params = {"format": "json", "detail": "high", "name_id": name_id, "page": page}
     else:
         params = {"format": "json", "detail": "high", "name": scientific_name, "page": page}
+    params.update(BRAZIL_BBOX)
 
     try:
         r = requests.get(
