@@ -4,7 +4,7 @@ services:
     container_name: bem-api
     restart: unless-stopped
     ports:
-      - "4000:4000"
+      - "9083:9083"
     environment:
       DOTENV_KEY: ${DOTENV_KEY:?DOTENV_KEY is required}
     volumes:
