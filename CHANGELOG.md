@@ -1,3 +1,10 @@
+## [1.1.2](https://github.com/G2BC/BEM-api/compare/v1.1.1...v1.1.2) (2026-05-11)
+
+
+### Bug Fixes
+
+* update Docker compose command to force recreate containers during deployment ([41f62eb](https://github.com/G2BC/BEM-api/commit/41f62ebe5e8a4bec5af08f27962058f6c1629449))
+
 ## [1.1.1](https://github.com/G2BC/BEM-api/compare/v1.1.0...v1.1.1) (2026-05-11)
 
 
