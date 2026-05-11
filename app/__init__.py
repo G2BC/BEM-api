@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 import sentry_sdk
 from dotenv_vault import load_dotenv
@@ -12,7 +13,7 @@ from .extensions import db, jwt
 from .utils.require_api_key import enforce_api_key
 
 migrate = Migrate()
-load_dotenv(override=False)
+load_dotenv(dotenv_path=Path(__file__).resolve().parent.parent / ".env.vault", override=False)
 
 
 def create_app():
