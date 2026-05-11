@@ -9,11 +9,10 @@ from app.models.reference import Reference  # noqa: F401 – needed for selectin
 from app.models.species import Species
 from app.models.species_characteristics import SpeciesCharacteristics
 from app.models.species_distribution import SpeciesDistribution
-from app.models.species_photo import SpeciesPhoto
 from app.models.species_similarity import SpeciesSimilarity
 from app.models.substrate import Substrate
 from app.utils.object_storage import normalize_object_url
-from sqlalchemy import case, exists, func, or_
+from sqlalchemy import case, func, or_
 from sqlalchemy.orm import selectinload
 
 
@@ -50,12 +49,6 @@ class SpeciesRepository:
             .group_by(Observation.species_id)
             .subquery()
         )
-        has_any_photo = exists().where(SpeciesPhoto.species_id == Species.id)
-        photo_priority = case(
-            (Species.id == 116, 0),
-            (has_any_photo, 1),
-            else_=2,
-        )
 
         base = (
             db.session.query(
@@ -84,7 +77,7 @@ class SpeciesRepository:
                     SpeciesSimilarity.similar_species
                 ),
             )
-            .order_by(photo_priority, Species.scientific_name.asc())
+            .order_by(Species.scientific_name.asc())
         )
 
         filters = []
@@ -130,16 +123,20 @@ class SpeciesRepository:
         )
         normalized_iucn = func.upper(func.trim(SpeciesCharacteristics.conservation_status))
 
-        species_counts = Species.query.outerjoin(
-            SpeciesCharacteristics,
-            SpeciesCharacteristics.species_id == Species.id,
-        ).with_entities(
-            func.count(Species.id).filter(is_bem).label("edible_brazil_species"),
-            func.count(Species.id)
-            .filter(normalized_iucn.in_(cls.THREATENED_IUCN_CATEGORIES))
-            .label("extinction_risk_species"),
-            func.count(Species.id).filter(is_brazilian_type).label("brazilian_type_species"),
-        ).one()
+        species_counts = (
+            Species.query.outerjoin(
+                SpeciesCharacteristics,
+                SpeciesCharacteristics.species_id == Species.id,
+            )
+            .with_entities(
+                func.count(Species.id).filter(is_bem).label("edible_brazil_species"),
+                func.count(Species.id)
+                .filter(normalized_iucn.in_(cls.THREATENED_IUCN_CATEGORIES))
+                .label("extinction_risk_species"),
+                func.count(Species.id).filter(is_brazilian_type).label("brazilian_type_species"),
+            )
+            .one()
+        )
 
         observations = Observation.query.with_entities(func.count(Observation.id)).scalar() or 0
 
@@ -223,7 +220,7 @@ class SpeciesRepository:
         query = query.order_by(
             case((Species.bem.ilike("BEM%"), 0), else_=1).asc(),
             func.length(Species.bem).asc(),
-            Species.bem.asc()
+            Species.bem.asc(),
         )
 
         bems = query.all()
