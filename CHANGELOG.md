@@ -1,3 +1,10 @@
+## [1.2.3](https://github.com/G2BC/BEM-api/compare/v1.2.2...v1.2.3) (2026-05-11)
+
+
+### Bug Fixes
+
+* streamline dotenv loading in application initialization ([aaf28d9](https://github.com/G2BC/BEM-api/commit/aaf28d996f3a669375e28fa269b3e70ff538ddbf))
+
 ## [1.2.2](https://github.com/G2BC/BEM-api/compare/v1.2.1...v1.2.2) (2026-05-11)
 
 
