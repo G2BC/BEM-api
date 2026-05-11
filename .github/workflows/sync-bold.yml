@@ -7,10 +7,6 @@ on:
         description: "BEM species ID(s) separados por vírgula, ex: 1 ou 1,2,3 (deixe vazio para sincronizar todas)"
         required: false
         type: string
-      geo_query:
-        description: "Filtro geográfico BOLD opcional, ex: geo:country/ocean:Brazil"
-        required: false
-        type: string
 
   schedule:
     - cron: "0 3 * * 5"
@@ -35,8 +31,7 @@ jobs:
       PYTHONUNBUFFERED: "1"
       UV_LINK_MODE: copy
       BEM_ID: ${{ inputs.bem_id }}
-      BOLD_GEO_QUERY: ${{ inputs.geo_query }}
-      BOLD_SLEEP_BETWEEN_REQUESTS: "3"
+BOLD_SLEEP_BETWEEN_REQUESTS: "3"
       BOLD_MAX_RECORDS_PER_SPECIES: "20000"
       BOLD_MAX_RUNTIME_SECONDS: "14100"
 
