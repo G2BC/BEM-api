@@ -1,8 +1,10 @@
 import os
-from pathlib import Path
+
+from dotenv_vault import load_dotenv
+
+load_dotenv(override=False)
 
 import sentry_sdk
-from dotenv_vault import load_dotenv
 from flask import Flask, request
 from flask_jwt_extended import get_jwt, verify_jwt_in_request
 from flask_migrate import Migrate
@@ -13,7 +15,6 @@ from .extensions import db, jwt
 from .utils.require_api_key import enforce_api_key
 
 migrate = Migrate()
-load_dotenv()
 
 
 def create_app():
