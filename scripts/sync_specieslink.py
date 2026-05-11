@@ -9,6 +9,7 @@ Sincroniza ocorrências do speciesLink para espécies com scientific_name cadast
 - Kill switch por MAX_RUNTIME_SECONDS
 """
 
+import datetime
 import os
 import sys
 import time
@@ -50,19 +51,14 @@ def _log(msg):
 
 
 def _build_date(props):
-    year = props.get("yearcollected")
-    month = props.get("monthcollected")
-    day = props.get("daycollected")
     try:
-        y = int(year) if year else 0
-        m = int(month) if month else 0
-        d = int(day) if day else 0
+        y = int(props.get("yearcollected") or 0)
+        m = int(props.get("monthcollected") or 0)
+        d = int(props.get("daycollected") or 0)
+        if y and m and d:
+            return str(datetime.date(y, m, d))
     except ValueError:
-        return None
-    if not y:
-        return None
-    if m and d:
-        return f"{y:04d}-{m:02d}-{d:02d}"
+        pass
     return None
 
 
