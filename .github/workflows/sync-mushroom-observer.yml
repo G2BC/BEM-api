@@ -23,15 +23,15 @@ jobs:
     container:
       image: python:3.12-slim
       options: --network bem-ci
-    timeout-minutes: 60
+    timeout-minutes: 240
     env:
       DOTENV_KEY: ${{ secrets.DOTENV_KEY }}
       APP_ENV: production
       PYTHONUNBUFFERED: "1"
       UV_LINK_MODE: copy
       BEM_ID: ${{ inputs.bem_id }}
-      MO_MAX_WORKERS: "1"
       MO_SLEEP_AFTER_REQUEST: "12"
+      MO_MAX_RUNTIME_SECONDS: "14100"
 
     steps:
       - name: Checkout
