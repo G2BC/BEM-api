@@ -1,6 +1,10 @@
 import os
 from datetime import timedelta
 
+from dotenv_vault import load_dotenv
+
+load_dotenv()
+
 
 class Config:
     API_TITLE = "BEM"

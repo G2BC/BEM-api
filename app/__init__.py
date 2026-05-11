@@ -1,9 +1,5 @@
 import os
 
-from dotenv_vault import load_dotenv
-
-load_dotenv(override=False)
-
 import sentry_sdk
 from flask import Flask, request
 from flask_jwt_extended import get_jwt, verify_jwt_in_request
