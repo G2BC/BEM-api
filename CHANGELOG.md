@@ -1,3 +1,10 @@
+## [1.2.2](https://github.com/G2BC/BEM-api/compare/v1.2.1...v1.2.2) (2026-05-11)
+
+
+### Bug Fixes
+
+* simplify dotenv loading by removing specific path ([13d253e](https://github.com/G2BC/BEM-api/commit/13d253e84d4ba94f5b371cacb776a74b1aa9b6cb))
+
 ## [1.2.1](https://github.com/G2BC/BEM-api/compare/v1.2.0...v1.2.1) (2026-05-11)
 
 
