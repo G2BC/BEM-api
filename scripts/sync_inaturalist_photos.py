@@ -1,16 +1,10 @@
 """
-Popula species_photos com fotos do iNaturalist a partir de species.inaturalist_taxon_id.
+Sincroniza fotos do iNaturalist para espécies com inaturalist_taxon_id cadastrado.
 
-Exemplo:
-    export ONLY_CC="true" # pular fotos sem licença CC
-    export SLEEP_SEC="1.0" # pausa entre chamadas
-    export PHOTO_LIMIT="0" # 0 = todas; >0 = máx de fotos por espécie
-    export INAT_USER_AGENT="BEM-api/1.0 (seu-email@dominio)"
-    export LIMIT_SPECIES="0" # 0=todas; >0 = processa apenas N espécies (debug)
-
-    python import_inaturalist_photos_release_1.py
+- Busca fotos via /v1/taxa/{taxon_id} (default_photo + taxon_photos)
+- UPSERT por photo_id
+- Filtra apenas licenças CC por padrão (ONLY_CC=true)
 """
-# ruff: noqa
 
 import os
 import sys
@@ -20,7 +14,7 @@ from typing import Any, Dict, List, Optional, Set
 
 import requests
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
@@ -39,6 +33,10 @@ USER_AGENT = os.getenv(
     "INAT_USER_AGENT",
     os.getenv("USER_AGENT", "BEM-api/1.0 (bem@uneb.br)"),
 )
+
+
+def _log(msg):
+    print(msg, flush=True)
 
 
 def get_session() -> requests.Session:
@@ -66,12 +64,12 @@ def _norm_photo(p: Dict[str, Any]) -> Optional[Dict[str, Any]]:
 
 
 def fetch_taxon_photos(sess: requests.Session, taxon_id: int) -> List[Dict[str, Any]]:
-    """Retorna lista de fotos (dicts normalizados) para um táxon."""
-
     for attempt in range(5):
         r = sess.get(f"{INAT_API}/{taxon_id}", timeout=60)
         if r.status_code == 429:
-            time.sleep(2 * (attempt + 1))
+            wait = 2 * (attempt + 1)
+            _log(f"  429 recebido — aguardando {wait}s")
+            time.sleep(wait)
             continue
         r.raise_for_status()
         data = r.json()
@@ -162,9 +160,12 @@ app = create_app()
 
 
 def main():
+    start_time = time.time()
     sess = get_session()
-
     BATCH_COMMIT = int(os.getenv("BATCH_COMMIT", "20"))
+
+    _log("=== Sync iNaturalist Photos ===")
+    _log(f"only_cc={ONLY_CC} | photo_limit={PHOTO_LIMIT} | limit_species={LIMIT_SPECIES} | sleep={SLEEP_SEC}s")
 
     with app.app_context():
         rows = (
@@ -177,6 +178,9 @@ def main():
         total = len(rows)
         processed = 0
         total_inserted = 0
+        errors = 0
+
+        _log(f"Espécies: {total}")
 
         for species_id, taxon_id in rows:
             if LIMIT_SPECIES and processed >= LIMIT_SPECIES:
@@ -191,17 +195,22 @@ def main():
 
                 if processed % BATCH_COMMIT == 0:
                     db.session.commit()
-            except Exception as e:
-                db.session.rollback()
-                print(f"• ERRO species_id={species_id} tid={taxon_id}: {e}")
 
-            print(f"• {processed}/{total} • species_id={species_id} tid={taxon_id} +{ins} fotos")
+                _log(f"[OK] [{processed}/{total}] species={species_id} taxon={taxon_id} fotos={ins}")
+            except Exception as e:
+                errors += 1
+                db.session.rollback()
+                _log(f"[ERRO] species={species_id} taxon={taxon_id}: {e}")
+
             time.sleep(SLEEP_SEC)
 
         db.session.commit()
         db.session.close()
 
-        print(f"FIM • espécies processadas: {processed} • fotos novas: {total_inserted}")
+    _log(
+        f"Total inseridas: {total_inserted} | Erros: {errors} | "
+        f"Tempo: {int(time.time() - start_time)}s"
+    )
 
 
 if __name__ == "__main__":
