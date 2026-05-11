@@ -5,16 +5,14 @@ from flask_jwt_extended import get_jwt_identity
 from flask_smorest import Blueprint
 
 from app.exceptions import AppError
-from app.schemas.login import AdminResetPasswordSchema, TokenSchema
+from app.schemas.login import AdminResetPasswordSchema
 from app.schemas.user_schemas import (
-    UserCreateSchema,
     UserListQuerySchema,
     UserPaginationSchema,
     UserRoleUpdateSchema,
     UserSchema,
     UserUpdateSchema,
 )
-from app.services.auth import AuthService
 from app.services.user_service import UserService
 from app.utils.bilingual import bilingual_response
 from app.utils.permissions import require_admin
@@ -44,17 +42,6 @@ class UsersList(MethodView):
             )
         except AppError as exc:
             return bilingual_response(exc.status, exc.pt, exc.en)
-
-    @user_bp.arguments(UserCreateSchema)
-    @user_bp.response(201, TokenSchema)
-    @user_bp.alt_response(400, description="Erro de validação/regra de negócio")
-    def post(self, payload):
-        try:
-            user = UserService.create_user(payload)
-            return AuthService.create_tokens_for(user)
-        except AppError as exc:
-            return bilingual_response(exc.status, exc.pt, exc.en)
-
 
 @user_bp.route("/<string:user_id>/approve")
 class ApproveUser(MethodView):

@@ -11,11 +11,10 @@ from app.utils.permissions import require_curator_or_admin
 reference_bp = Blueprint(
     "references",
     "references",
-    url_prefix="/references",
 )
 
 
-@reference_bp.route("/select")
+@reference_bp.route("/options")
 class ReferencesSelect(MethodView):
     @require_curator_or_admin
     @reference_bp.response(200, ReferenceSchema(many=True))

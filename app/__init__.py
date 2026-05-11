@@ -3,11 +3,11 @@ import os
 import sentry_sdk
 from dotenv_vault import load_dotenv
 from flask import Flask, request
-from flask_cors import CORS
 from flask_jwt_extended import get_jwt, verify_jwt_in_request
 from flask_migrate import Migrate
 from flask_smorest import Api
 
+from .config.cors import init_cors
 from .extensions import db, jwt
 from .utils.require_api_key import enforce_api_key
 
@@ -23,13 +23,7 @@ def create_app():
 
     app = Flask(__name__)
     app.config.from_object("app.config.Config")
-
-    CORS(
-        app,
-        resources={r"/*": {"origins": app.config["CORS_ALLOWED_ORIGINS"]}},
-        methods=app.config["CORS_METHODS"],
-        allow_headers=app.config["CORS_ALLOW_HEADERS"],
-    )
+    init_cors(app)
 
     db.init_app(app)
     jwt.init_app(app)
@@ -70,7 +64,14 @@ def create_app():
             return None
 
         path = request.path
-        protected_prefixes = ("/auth", "/users", "/species", "/references", "/contact")
+        protected_prefixes = (
+            "/admin",
+            "/auth",
+            "/registrations",
+            "/species",
+            "/species-change-requests",
+            "/contact-messages",
+        )
 
         if any(path == prefix or path.startswith(f"{prefix}/") for prefix in protected_prefixes):
             result = enforce_api_key()

@@ -8,11 +8,7 @@ from flask_smorest import Blueprint
 from app.utils.bilingual import bilingual_response
 from app.utils.send_email import send_email
 
-contact_bp = Blueprint(
-    "contact",
-    "contact",
-    url_prefix="/contact",
-)
+contact_bp = Blueprint("contact_messages", "contact_messages")
 
 GMAIL_TO = os.getenv("GMAIL_TO", "alenz@uneb.br")
 

@@ -6,11 +6,7 @@ from app.schemas.species_schemas import SnapshotDownloadResponseSchema
 from app.utils.bilingual import bilingual_response
 from app.utils.object_storage import generate_presigned_get_url, list_objects
 
-snapshot_bp = Blueprint(
-    "snapshot",
-    "snapshot",
-    url_prefix="/snapshot",
-)
+snapshot_bp = Blueprint("snapshots", "snapshots")
 
 _FORMATS = {"xlsx", "json"}
 _LANGS = {"pt", "en"}
@@ -28,7 +24,7 @@ def _latest_version(bucket: str) -> int | None:
     return max(versions) if versions else None
 
 
-@snapshot_bp.route("/download")
+@snapshot_bp.route("/latest/download")
 class SnapshotDownload(MethodView):
     @snapshot_bp.response(200, SnapshotDownloadResponseSchema)
     @snapshot_bp.alt_response(400, description="Parâmetros inválidos")
