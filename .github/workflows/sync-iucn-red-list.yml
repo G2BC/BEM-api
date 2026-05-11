@@ -11,8 +11,10 @@ on:
         description: "Código(s) BEM separados por vírgula, ex: BEM1 ou BEM1,BEM2 (deixe vazio para sincronizar todas)"
         required: false
         type: string
-  schedule:
-    - cron: "0 4 1 * *"
+      cf_clearance:
+        description: "Cookie cf_clearance obtido do browser após acessar api.iucnredlist.org"
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -35,6 +37,7 @@ jobs:
       UV_LINK_MODE: copy
       BEM_ID: ${{ inputs.bem_id }}
       BEM: ${{ inputs.bem }}
+      IUCN_CF_CLEARANCE: ${{ inputs.cf_clearance }}
 
     steps:
       - name: Checkout
