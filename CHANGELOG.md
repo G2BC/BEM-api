@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/G2BC/BEM-api/compare/v1.1.0...v1.1.1) (2026-05-11)
+
+
+### Bug Fixes
+
+* add REDIS_PASSWORD to .env.example for environment configuration ([b9d7490](https://github.com/G2BC/BEM-api/commit/b9d749099c4daa25fe9601c87f78375531036283))
+
 # [1.1.0](https://github.com/G2BC/BEM-api/compare/v1.0.0...v1.1.0) (2026-05-11)
 
 
