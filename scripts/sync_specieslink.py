@@ -53,14 +53,17 @@ def _build_date(props):
     year = props.get("yearcollected")
     month = props.get("monthcollected")
     day = props.get("daycollected")
-    if not year or year == "0000":
+    try:
+        y = int(year) if year else 0
+        m = int(month) if month else 0
+        d = int(day) if day else 0
+    except ValueError:
         return None
-    parts = [year.zfill(4)]
-    if month and month != "00":
-        parts.append(month.zfill(2))
-        if day and day != "00":
-            parts.append(day.zfill(2))
-    return "-".join(parts) if len(parts) == 3 else None
+    if not y:
+        return None
+    if m and d:
+        return f"{y:04d}-{m:02d}-{d:02d}"
+    return None
 
 
 def _external_id(props):
