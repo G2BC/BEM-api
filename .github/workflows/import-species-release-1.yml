@@ -31,9 +31,12 @@ jobs:
 
       - name: Download Google Sheets as XLSX
         run: |
-          curl -fL \
-            "https://docs.google.com/spreadsheets/d/${{ inputs.sheet_id }}/export?format=xlsx" \
-            -o /tmp/species.xlsx
+          python -c "
+          import urllib.request
+          url = 'https://docs.google.com/spreadsheets/d/${{ inputs.sheet_id }}/export?format=xlsx'
+          urllib.request.urlretrieve(url, '/tmp/species.xlsx')
+          print('Download concluido')
+          "
 
       - name: Install dependencies
         run: |
