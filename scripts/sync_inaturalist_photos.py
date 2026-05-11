@@ -51,7 +51,7 @@ def _norm_photo(p: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     if not p:
         return None
     pid = p.get("id")
-    medium = p.get("medium_url") or p.get("url")
+    medium = p.get("original") or p.get("medium_url") or p.get("url")
     if not pid or not medium:
         return None
     return {

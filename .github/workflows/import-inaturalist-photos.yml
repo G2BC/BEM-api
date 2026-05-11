@@ -1,0 +1,58 @@
+name: Import iNaturalist Photos
+
+on:
+  workflow_dispatch:
+    inputs:
+      photo_limit:
+        description: "Máximo de fotos por espécie (0 = todas)"
+        required: false
+        default: "0"
+        type: string
+      limit_species:
+        description: "Processar apenas N espécies (0 = todas, útil para teste)"
+        required: false
+        default: "0"
+        type: string
+      only_cc:
+        description: "Somente fotos com licença CC"
+        required: false
+        default: "true"
+        type: choice
+        options:
+          - "true"
+          - "false"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: import-inaturalist-photos
+  cancel-in-progress: true
+
+jobs:
+  import:
+    runs-on: self-hosted
+    container:
+      image: python:3.12-slim
+      options: --network bem-ci
+    timeout-minutes: 120
+    env:
+      DOTENV_KEY: ${{ secrets.DOTENV_KEY }}
+      APP_ENV: production
+      PYTHONUNBUFFERED: "1"
+      UV_LINK_MODE: copy
+      ONLY_CC: ${{ inputs.only_cc }}
+      PHOTO_LIMIT: ${{ inputs.photo_limit }}
+      LIMIT_SPECIES: ${{ inputs.limit_species }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          pip install -q --user uv
+          ~/.local/bin/uv sync --frozen --no-dev
+
+      - name: Run import script
+        run: ~/.local/bin/uv run python scripts/sync_inaturalist_photos.py
