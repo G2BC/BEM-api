@@ -81,6 +81,7 @@ def _fetch_page(scientific_name, offset):
     params = {
         "apikey": SPECIESLINK_API_KEY,
         "scientificName": scientific_name,
+        "country": "Brazil",
         "offset": offset,
         "limit": PAGE_SIZE,
     }
