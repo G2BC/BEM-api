@@ -1,3 +1,10 @@
+## [1.1.4](https://github.com/G2BC/BEM-api/compare/v1.1.3...v1.1.4) (2026-05-11)
+
+
+### Bug Fixes
+
+* update README to include usage of dotend-vault ([a5c4ce4](https://github.com/G2BC/BEM-api/commit/a5c4ce493d186f793de515e75179a0683995c898))
+
 ## [1.1.3](https://github.com/G2BC/BEM-api/compare/v1.1.2...v1.1.3) (2026-05-11)
 
 
