@@ -280,6 +280,7 @@ def _resolved_query(scientific_name):
     resolved = []
     has_tax_term = False
 
+    has_geo_term = False
     for term in terms:
         if not isinstance(term, dict):
             continue
@@ -294,12 +295,17 @@ def _resolved_query(scientific_name):
 
         if matched.startswith("geo:"):
             resolved.append(matched)
+            has_geo_term = True
 
     if not has_tax_term:
         raise BoldNoTaxonMatch(f"BOLD não resolveu tax:species para {scientific_name!r}")
 
     if not resolved:
         return submitted_query
+
+    if BOLD_GEO_QUERY and not has_geo_term:
+        resolved.append(BOLD_GEO_QUERY)
+
     return ";".join(resolved)
 
 
@@ -363,12 +369,19 @@ def _delete_stale_observations(species_id, seen_external_ids):
     return deleted
 
 
+_BRAZIL_BBOX = (-33.75, -73.99, 5.27, -28.85)  # (lat_min, lon_min, lat_max, lon_max)
+
+
 def _build_row(species_id, scientific_name, document):
     lat, lng = _extract_coordinates(document)
     if lat is None or lng is None:
         return None
 
     if not (-90 <= lat <= 90 and -180 <= lng <= 180):
+        return None
+
+    lat_min, lon_min, lat_max, lon_max = _BRAZIL_BBOX
+    if not (lat_min <= lat <= lat_max and lon_min <= lng <= lon_max):
         return None
 
     bold_species = _text_value(

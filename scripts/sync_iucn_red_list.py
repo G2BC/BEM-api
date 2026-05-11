@@ -62,6 +62,11 @@ def _request_headers(api_key: str) -> dict[str, str]:
     return {
         "authorization": api_key,
         "accept": "application/json",
+        "user-agent": (
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/148.0.0.0 Safari/537.36"
+        ),
     }
 
 
