@@ -175,6 +175,12 @@ def _sync_species(species_id, scientific_name, start_time):
                     continue
 
                 lng, lat = coords[0], coords[1]
+
+                # Bounding box do Brasil — descarta registros com coordenada fora
+                if not (-33.75 <= lat <= 5.27 and -73.99 <= lng <= -28.65):
+                    _log(f"  [SKIP] coordenada fora do Brasil: lat={lat}, lng={lng}")
+                    continue
+
                 props = feature.get("properties") or {}
                 external_id = _external_id(props)
                 if not external_id:
