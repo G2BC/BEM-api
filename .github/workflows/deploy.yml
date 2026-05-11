@@ -95,7 +95,7 @@ jobs:
         run: |
           IMAGE_REPO="${APP_IMAGE:-ghcr.io/g2bc/bem-api}"
           APP_IMAGE="${IMAGE_REPO}" IMAGE_TAG="${{ steps.tag.outputs.value }}" \
-            docker compose up -d --force-recreate --no-deps --pull always --wait --wait-timeout 120 "$SERVICE"
+            docker compose up -d --no-deps --pull always --wait --wait-timeout 120 "$SERVICE"
 
       - name: Run database migrations
         working-directory: ${{ env.APP_DIR }}
