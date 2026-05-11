@@ -1,3 +1,10 @@
+## [1.2.1](https://github.com/G2BC/BEM-api/compare/v1.2.0...v1.2.1) (2026-05-11)
+
+
+### Bug Fixes
+
+* update dotenv loading to use .env.vault path ([3426606](https://github.com/G2BC/BEM-api/commit/3426606a49daa2b924806080f0b90d1b2e443ac4))
+
 # [1.2.0](https://github.com/G2BC/BEM-api/compare/v1.1.4...v1.2.0) (2026-05-11)
 
 
