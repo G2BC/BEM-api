@@ -1,3 +1,10 @@
+## [1.2.4](https://github.com/G2BC/BEM-api/compare/v1.2.3...v1.2.4) (2026-05-11)
+
+
+### Bug Fixes
+
+* update cache prefixes for observations and NCBI to include 'bem:' namespace ([787454b](https://github.com/G2BC/BEM-api/commit/787454b9605f460281d9ff50a2be4e07ce675d1d))
+
 ## [1.2.3](https://github.com/G2BC/BEM-api/compare/v1.2.2...v1.2.3) (2026-05-11)
 
 
