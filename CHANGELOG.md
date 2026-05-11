@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/G2BC/BEM-api/compare/v1.0.0...v1.1.0) (2026-05-11)
+
+
+### Features
+
+* add new API endpoints for documentation and OpenAPI specification ([08dcfe4](https://github.com/G2BC/BEM-api/commit/08dcfe4fc0b38ac50e47faad589891a3a0ef0e9e))
+
 # 1.0.0 (2026-05-10)
 
 
