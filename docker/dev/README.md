@@ -16,6 +16,8 @@ Este ambiente sobe:
 cp .env.example .env
 ```
 
+- Usaremos dotend-vault
+
 2. Preencha no `.env` as variáveis.
 
 3. Garanta o arquivo de policy do MinIO:
