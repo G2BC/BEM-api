@@ -71,6 +71,8 @@ def create_app():
             "/species",
             "/species-change-requests",
             "/contact-messages",
+            "/docs",
+            "/openapi.json",
         )
 
         if any(path == prefix or path.startswith(f"{prefix}/") for prefix in protected_prefixes):
