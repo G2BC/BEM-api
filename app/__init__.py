@@ -13,7 +13,7 @@ from .extensions import db, jwt
 from .utils.require_api_key import enforce_api_key
 
 migrate = Migrate()
-load_dotenv(dotenv_path=Path(__file__).resolve().parent.parent / ".env.vault", override=False)
+load_dotenv()
 
 
 def create_app():
