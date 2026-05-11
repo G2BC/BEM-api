@@ -369,20 +369,14 @@ def _delete_stale_observations(species_id, seen_external_ids):
     return deleted
 
 
-_BRAZIL_BBOX = (-33.75, -73.99, 5.27, -28.85)  # (lat_min, lon_min, lat_max, lon_max)
-
-
 def _build_row(species_id, scientific_name, document):
+    """Returns (row_dict, None) on success or (None, reason_str) on rejection."""
     lat, lng = _extract_coordinates(document)
     if lat is None or lng is None:
-        return None
+        return None, "sem coordenadas"
 
     if not (-90 <= lat <= 90 and -180 <= lng <= 180):
-        return None
-
-    lat_min, lon_min, lat_max, lon_max = _BRAZIL_BBOX
-    if not (lat_min <= lat <= lat_max and lon_min <= lng <= lon_max):
-        return None
+        return None, f"coordenadas inválidas ({lat}, {lng})"
 
     bold_species = _text_value(
         _first_value(
@@ -396,7 +390,7 @@ def _build_row(species_id, scientific_name, document):
         )
     )
     if bold_species and _normalize_text(bold_species) != _normalize_text(scientific_name):
-        return None
+        return None, f"espécie divergente (BOLD={bold_species!r} vs esperado={scientific_name!r})"
 
     external_id = _external_id(document)
     quality_parts = [
@@ -428,7 +422,7 @@ def _build_row(species_id, scientific_name, document):
         "quality_grade": quality_grade,
         "photo_url": None,
         "url": _record_url(external_id),
-    }
+    }, None
 
 
 def _sync_species(species_id, scientific_name, start_time):
@@ -465,11 +459,14 @@ def _sync_species(species_id, scientific_name, start_time):
             records_total = data.get("recordsTotal")
             rows_by_external_id = {}
 
+            skip_counts: dict[str, int] = {}
             for document in documents:
                 if not isinstance(document, dict):
+                    skip_counts["documento inválido"] = skip_counts.get("documento inválido", 0) + 1
                     continue
-                row = _build_row(species_id, scientific_name, document)
-                if not row:
+                row, reason = _build_row(species_id, scientific_name, document)
+                if row is None:
+                    skip_counts[reason] = skip_counts.get(reason, 0) + 1
                     continue
                 rows_by_external_id[row["external_id"]] = row
                 seen_external_ids.add(row["external_id"])
@@ -478,9 +475,14 @@ def _sync_species(species_id, scientific_name, start_time):
             total += _upsert(rows)
 
             page = start // PAGE_SIZE + 1
+            skip_summary = (
+                " | recusados: " + ", ".join(f"{r}={n}" for r, n in sorted(skip_counts.items()))
+                if skip_counts
+                else ""
+            )
             _log(
                 f"  [{species_id}] página {page}: {len(documents)} docs, "
-                f"{len(rows)} válidos (total BOLD: {records_total})"
+                f"{len(rows)} válidos (total BOLD: {records_total}){skip_summary}"
             )
 
             start += PAGE_SIZE
