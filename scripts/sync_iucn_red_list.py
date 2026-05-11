@@ -62,24 +62,12 @@ def _request_headers(api_key: str) -> dict[str, str]:
     return {
         "authorization": api_key,
         "accept": "application/json",
-        "accept-language": "en-US,en;q=0.9",
-        "referer": "https://api.iucnredlist.org/api-docs/index.html",
-        "sec-fetch-dest": "empty",
-        "sec-fetch-mode": "cors",
-        "sec-fetch-site": "same-origin",
         "user-agent": (
             "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
             "AppleWebKit/537.36 (KHTML, like Gecko) "
             "Chrome/148.0.0.0 Safari/537.36"
         ),
     }
-
-
-def _request_cookies() -> dict[str, str]:
-    cf_clearance = os.getenv("IUCN_CF_CLEARANCE", "").strip()
-    if not cf_clearance:
-        return {}
-    return {"cf_clearance": cf_clearance}
 
 
 def main():
@@ -95,9 +83,6 @@ def main():
 
     if not api_key:
         raise RuntimeError("IUCN_API_KEY nao configurada")
-
-    if not os.getenv("IUCN_CF_CLEARANCE", "").strip():
-        _log("IUCN_CF_CLEARANCE nao informado — requisicoes podem ser bloqueadas pelo Cloudflare", "AVISO")
 
     with app.app_context():
         query = Species.query.filter(Species.scientific_name.isnot(None))
@@ -136,7 +121,6 @@ def main():
             response = requests.get(
                 "https://api.iucnredlist.org/api/v4/taxa/scientific_name",
                 headers=_request_headers(api_key),
-                cookies=_request_cookies(),
                 params={
                     "genus_name": genus_name,
                     "species_name": species_name,
