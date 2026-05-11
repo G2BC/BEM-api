@@ -1,3 +1,10 @@
+## [1.1.3](https://github.com/G2BC/BEM-api/compare/v1.1.2...v1.1.3) (2026-05-11)
+
+
+### Bug Fixes
+
+* remove force recreate option from Docker compose command during deployment ([e712886](https://github.com/G2BC/BEM-api/commit/e712886e4834b036664ad9a8899862229d1de04c))
+
 ## [1.1.2](https://github.com/G2BC/BEM-api/compare/v1.1.1...v1.1.2) (2026-05-11)
 
 
