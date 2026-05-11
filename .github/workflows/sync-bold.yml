@@ -28,7 +28,7 @@ jobs:
     container:
       image: python:3.12-slim
       options: --network bem-ci
-    timeout-minutes: 60
+    timeout-minutes: 240
     env:
       DOTENV_KEY: ${{ secrets.DOTENV_KEY }}
       APP_ENV: production
@@ -36,9 +36,9 @@ jobs:
       UV_LINK_MODE: copy
       BEM_ID: ${{ inputs.bem_id }}
       BOLD_GEO_QUERY: ${{ inputs.geo_query }}
-      BOLD_MAX_WORKERS: "1"
       BOLD_SLEEP_BETWEEN_REQUESTS: "3"
       BOLD_MAX_RECORDS_PER_SPECIES: "20000"
+      BOLD_MAX_RUNTIME_SECONDS: "14100"
 
     steps:
       - name: Checkout

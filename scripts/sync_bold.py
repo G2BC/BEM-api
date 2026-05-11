@@ -1,20 +1,24 @@
 """
 Sincroniza registros georreferenciados do BOLD para espécies com scientific_name cadastrado.
 
+- Processa espécies agrupadas pelo campo `bem` (BEM1, BEM2, ..., P1, P2)
+- Checkpoint por run no Redis (bem:sync:bold:done:{data}) — retoma de onde parou no mesmo dia
+- Lock distribuído (bem:sync:bold:lock) — evita execução paralela
+- Pausa de BOLD_GROUP_PAUSE_SECONDS entre grupos
+- Para se grupo inteiro falhar ou se IP for bloqueado (403 sem recuperação)
 - Full sync por padrão, limitado por BOLD_MAX_RECORDS_PER_SPECIES
 - UPSERT via INSERT ... ON CONFLICT DO UPDATE
 - Reconcilia observações removendo, no final, o que não veio mais da API
 - Paginação via /api/documents/{query_id}
-- ThreadPoolExecutor com BOLD_MAX_WORKERS threads
 - Kill switch por MAX_RUNTIME_SECONDS
 """
 
 import hashlib
 import os
+import re
 import sys
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
 from urllib.parse import quote
 
@@ -36,7 +40,6 @@ BOLD_API_URL = os.getenv("BOLD_API_URL", "https://portal.boldsystems.org/api").r
 PAGE_SIZE = int(os.getenv("BOLD_PAGE_SIZE", "500"))
 REQUEST_TIMEOUT = float(os.getenv("BOLD_REQUEST_TIMEOUT", "45"))
 SLEEP_BETWEEN_REQUESTS = float(os.getenv("BOLD_SLEEP_BETWEEN_REQUESTS", "1.0"))
-MAX_WORKERS = int(os.getenv("BOLD_MAX_WORKERS", "2"))
 MAX_RUNTIME_SECONDS = int(os.getenv("BOLD_MAX_RUNTIME_SECONDS", "3540"))
 MAX_RETRIES = int(os.getenv("BOLD_MAX_RETRIES", "3"))
 MAX_RECORDS_PER_SPECIES = int(os.getenv("BOLD_MAX_RECORDS_PER_SPECIES", "20000"))
@@ -46,6 +49,12 @@ BOLD_SKIP_PREPROCESSOR = os.getenv("BOLD_SKIP_PREPROCESSOR", "").strip().lower()
     "true",
     "yes",
 }
+GROUP_PAUSE_SECONDS = int(os.getenv("BOLD_GROUP_PAUSE_SECONDS", "180"))
+REDIS_URL = os.getenv("REDIS_URL", "").strip()
+CHECKPOINT_TTL = 60 * 60 * 25  # 25 horas — cobre uma re-execução no mesmo dia
+LOCK_KEY = "bem:sync:bold:lock"
+LOCK_TTL = MAX_RUNTIME_SECONDS + 300
+
 HEADERS = {"User-Agent": "BEM-api/1.0 (bem.uneb.br; contact: bem.g2bc@gmail.com)"}
 
 app = create_app()
@@ -67,6 +76,88 @@ def _normalize_text(value):
     return " ".join(str(value or "").strip().lower().split())
 
 
+# ---------------------------------------------------------------------------
+# Redis checkpoint helpers
+# ---------------------------------------------------------------------------
+
+def _get_redis():
+    if not REDIS_URL:
+        return None
+    try:
+        import redis
+        client = redis.from_url(REDIS_URL, decode_responses=True, socket_timeout=3)
+        client.ping()
+        return client
+    except Exception as exc:
+        _log(f"[AVISO] Redis indisponível — checkpoint desativado: {exc}")
+        return None
+
+
+def _acquire_lock(r):
+    if not r:
+        return True
+    return bool(r.set(LOCK_KEY, "1", nx=True, ex=LOCK_TTL))
+
+
+def _release_lock(r):
+    if r:
+        r.delete(LOCK_KEY)
+
+
+def _done_key(run_date):
+    return f"bem:sync:bold:done:{run_date}"
+
+
+def _failed_key(run_date):
+    return f"bem:sync:bold:failed:{run_date}"
+
+
+def _is_done(r, run_date, species_id):
+    if not r:
+        return False
+    try:
+        return bool(r.sismember(_done_key(run_date), str(species_id)))
+    except Exception:
+        return False
+
+
+def _mark_done(r, run_date, species_id):
+    if not r:
+        return
+    try:
+        key = _done_key(run_date)
+        r.sadd(key, str(species_id))
+        r.expire(key, CHECKPOINT_TTL)
+    except Exception:
+        pass
+
+
+def _mark_failed(r, run_date, species_id):
+    if not r:
+        return
+    try:
+        key = _failed_key(run_date)
+        r.sadd(key, str(species_id))
+        r.expire(key, CHECKPOINT_TTL)
+    except Exception:
+        pass
+
+
+# ---------------------------------------------------------------------------
+# Group ordering: BEM1 < BEM2 < ... < BEM10 < P1 < P2
+# ---------------------------------------------------------------------------
+
+def _group_sort_key(name):
+    m = re.match(r"^([A-Za-z]+)(\d+)$", name or "")
+    if m:
+        return (m.group(1), int(m.group(2)))
+    return (name or "", 0)
+
+
+# ---------------------------------------------------------------------------
+# BOLD API helpers
+# ---------------------------------------------------------------------------
+
 def _request_json(path, params):
     url = f"{BOLD_API_URL}{path}"
     last_error = None
@@ -74,16 +165,19 @@ def _request_json(path, params):
         try:
             response = requests.get(url, params=params, headers=HEADERS, timeout=REQUEST_TIMEOUT)
             if response.status_code == 403:
-                raise BoldBlocked(
-                    "BOLD retornou HTTP 403; provável bloqueio temporário ou proteção anti-abuso"
-                )
+                if attempt + 1 < MAX_RETRIES:
+                    wait = 2 ** attempt * 30
+                    _log(f"  403 do BOLD — aguardando {wait}s (tentativa {attempt + 1}/{MAX_RETRIES})")
+                    time.sleep(wait)
+                    continue
+                raise BoldBlocked("BOLD retornou HTTP 403 após todas as tentativas; IP provavelmente bloqueado")
             if response.status_code == 429:
-                wait = 2**attempt * 10
+                wait = 2 ** attempt * 10
                 _log(f"  429 recebido do BOLD — aguardando {wait}s")
                 time.sleep(wait)
                 continue
             if response.status_code >= 500:
-                wait = 2**attempt * 5
+                wait = 2 ** attempt * 5
                 _log(
                     f"  BOLD HTTP {response.status_code} — aguardando {wait}s "
                     f"(tentativa {attempt + 1}/{MAX_RETRIES})"
@@ -92,10 +186,12 @@ def _request_json(path, params):
                 continue
             response.raise_for_status()
             return response.json()
+        except BoldBlocked:
+            raise
         except requests.RequestException as exc:
             last_error = exc
             if attempt + 1 < MAX_RETRIES:
-                time.sleep(2**attempt * 5)
+                time.sleep(2 ** attempt * 5)
                 continue
             raise
 
@@ -279,8 +375,8 @@ def _resolved_query(scientific_name):
     terms = data.get("successful_terms") or []
     resolved = []
     has_tax_term = False
-
     has_geo_term = False
+
     for term in terms:
         if not isinstance(term, dict):
             continue
@@ -359,31 +455,62 @@ def _delete_stale_observations(species_id, seen_external_ids):
     deleted = 0
     stale_ids = list(stale_ids)
     for i in range(0, len(stale_ids), 1000):
-        chunk = stale_ids[i:i + 1000]
-        deleted += db.session.query(Observation).filter(
-            Observation.species_id == species_id,
-            Observation.source == "bold",
-            Observation.external_id.in_(chunk),
-        ).delete(synchronize_session=False)
+        chunk = stale_ids[i : i + 1000]
+        deleted += (
+            db.session.query(Observation)
+            .filter(
+                Observation.species_id == species_id,
+                Observation.source == "bold",
+                Observation.external_id.in_(chunk),
+            )
+            .delete(synchronize_session=False)
+        )
     db.session.commit()
     return deleted
 
 
 _BRAZIL_BBOX = (-33.75, -73.99, 5.27, -28.85)  # (lat_min, lon_min, lat_max, lon_max)
+_BRAZIL_COUNTRY_NAMES = {"brazil", "brasil", "br"}
+
+
+def _country_from_document(document):
+    value = _first_value(
+        document,
+        (
+            "collection.country",
+            "country",
+            "geo.country",
+            "location.country",
+            "collection.country_ocean",
+            "country_ocean",
+        ),
+    )
+    return _normalize_text(_text_value(value) or "")
 
 
 def _build_row(species_id, scientific_name, document):
     """Returns (row_dict, None) on success or (None, reason_str) on rejection."""
+    country = _country_from_document(document)
+    if country:
+        if country not in _BRAZIL_COUNTRY_NAMES:
+            return None, f"país não é Brasil ({country!r})"
+    else:
+        # País ausente no documento — usa bounding box como fallback
+        lat, lng = _extract_coordinates(document)
+        if lat is None or lng is None:
+            return None, "sem coordenadas e sem país"
+        if not (-90 <= lat <= 90 and -180 <= lng <= 180):
+            return None, f"coordenadas inválidas ({lat}, {lng})"
+        lat_min, lon_min, lat_max, lon_max = _BRAZIL_BBOX
+        if not (lat_min <= lat <= lat_max and lon_min <= lng <= lon_max):
+            return None, f"fora do Brasil pelo bbox ({lat}, {lng})"
+
     lat, lng = _extract_coordinates(document)
     if lat is None or lng is None:
         return None, "sem coordenadas"
 
     if not (-90 <= lat <= 90 and -180 <= lng <= 180):
         return None, f"coordenadas inválidas ({lat}, {lng})"
-
-    lat_min, lon_min, lat_max, lon_max = _BRAZIL_BBOX
-    if not (lat_min <= lat <= lat_max and lon_min <= lng <= lon_max):
-        return None, f"fora do Brasil ({lat}, {lng})"
 
     bold_species = _text_value(
         _first_value(
@@ -512,62 +639,118 @@ def _sync_species(species_id, scientific_name, start_time):
         return total, deleted, completed
 
 
+def _process_group(group_name, species_rows, run_date, r, start_time):
+    """Processa um grupo de espécies sequencialmente.
+
+    Retorna True se o job deve ser interrompido (IP bloqueado ou grupo inteiro falhou).
+    """
+    total = 0
+    total_deleted = 0
+    attempted = 0
+    failed = 0
+
+    for row in species_rows:
+        if _is_done(r, run_date, row.id):
+            _log(f"  [{row.id}] checkpoint — já processado hoje, pulando")
+            continue
+
+        if time.time() - start_time > MAX_RUNTIME_SECONDS:
+            _log(f"  [{row.id}] Kill switch — abortando")
+            break
+
+        attempted += 1
+
+        try:
+            inserted, deleted, completed = _sync_species(row.id, row.scientific_name, start_time)
+            total += inserted
+            total_deleted += deleted
+            _mark_done(r, run_date, row.id)
+            _log(f"[OK] {group_name} species={row.id} upsert={inserted} removidos={deleted}")
+        except BoldBlocked as exc:
+            _log(f"[BLOQUEADO] {group_name} species={row.id}: {exc}")
+            _mark_failed(r, run_date, row.id)
+            return True  # IP bloqueado — para tudo
+        except Exception as exc:
+            failed += 1
+            _log(f"[ERRO] {group_name} species={row.id}: {exc}")
+            _mark_failed(r, run_date, row.id)
+
+    _log(
+        f"Grupo {group_name}: upsert={total} removidos={total_deleted} "
+        f"falhas={failed}/{attempted}"
+    )
+
+    return attempted > 0 and failed == attempted  # grupo inteiro falhou
+
+
 def main():
     start_time = time.time()
+    run_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
     raw_bem_ids = os.getenv("BEM_ID", "")
     bem_ids = [int(v) for raw in raw_bem_ids.split(",") if (v := raw.strip()).isdigit()]
 
     _log("=== Sync BOLD ===")
     _log(
-        f"workers={MAX_WORKERS} | page_size={PAGE_SIZE} | "
-        f"limite={MAX_RUNTIME_SECONDS}s | max_records_species={MAX_RECORDS_PER_SPECIES}"
+        f"page_size={PAGE_SIZE} | limite={MAX_RUNTIME_SECONDS}s | "
+        f"max_records_species={MAX_RECORDS_PER_SPECIES} | pausa_entre_grupos={GROUP_PAUSE_SECONDS}s"
     )
     if BOLD_GEO_QUERY:
         _log(f"geo_query={BOLD_GEO_QUERY}")
 
-    with app.app_context():
-        query = db.session.query(Species.id, Species.scientific_name).filter(
-            Species.scientific_name.isnot(None)
-        )
+    r = _get_redis()
+
+    if not _acquire_lock(r):
+        _log("[ABORT] Outra execução já está em andamento (lock Redis ativo)")
+        sys.exit(1)
+
+    try:
+        with app.app_context():
+            query = db.session.query(Species.id, Species.scientific_name, Species.bem).filter(
+                Species.scientific_name.isnot(None)
+            )
+            if bem_ids:
+                query = query.filter(Species.id.in_(bem_ids))
+            species_rows = query.all()
+
+        _log(f"Espécies: {len(species_rows)}")
+
         if bem_ids:
-            query = query.filter(Species.id.in_(bem_ids))
-        species_rows = query.all()
+            # Modo manual: processa IDs específicos sem agrupamento
+            _log("Modo manual — sem agrupamento por bem")
+            _process_group("manual", species_rows, run_date, r, start_time)
+        else:
+            # Agrupa por campo `bem` e ordena naturalmente
+            groups: dict[str, list] = {}
+            for row in species_rows:
+                group = row.bem or "sem_grupo"
+                groups.setdefault(group, []).append(row)
 
-    _log(f"Espécies: {len(species_rows)}")
+            sorted_group_names = sorted(groups.keys(), key=_group_sort_key)
+            _log(f"Grupos: {sorted_group_names}")
 
-    total = 0
-    total_deleted = 0
-    errors = 0
-
-    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as pool:
-        futures = {
-            pool.submit(_sync_species, row.id, row.scientific_name, start_time): row.id
-            for row in species_rows
-        }
-        for future in as_completed(futures):
-            species_id = futures[future]
-            try:
-                inserted, deleted, completed = future.result()
-                total += inserted
-                total_deleted += deleted
-                _log(f"[OK] species={species_id} upsert={inserted} removidos={deleted}")
-                if not completed:
-                    pool.shutdown(wait=False, cancel_futures=True)
+            for i, group_name in enumerate(sorted_group_names):
+                if time.time() - start_time > MAX_RUNTIME_SECONDS:
+                    _log("[KILL SWITCH] Tempo máximo atingido")
                     break
-            except BoldBlocked as e:
-                errors += 1
-                _log(f"[BLOQUEADO] species={species_id}: {e}")
-                pool.shutdown(wait=False, cancel_futures=True)
-                break
-            except Exception as e:
-                errors += 1
-                _log(f"[ERRO] species={species_id}: {e}")
 
-    _log(
-        f"Total upsert: {total} | Removidos: {total_deleted} | "
-        f"Erros: {errors} | Tempo: {int(time.time() - start_time)}s"
-    )
+                group_species = groups[group_name]
+                _log(f"\n=== Grupo {group_name} ({len(group_species)} espécies) ===")
+
+                should_stop = _process_group(group_name, group_species, run_date, r, start_time)
+
+                if should_stop:
+                    _log(f"[STOP] Grupo {group_name} falhou completamente — encerrando sync")
+                    break
+
+                if i < len(sorted_group_names) - 1:
+                    _log(f"Pausa de {GROUP_PAUSE_SECONDS}s antes do próximo grupo...")
+                    time.sleep(GROUP_PAUSE_SECONDS)
+
+    finally:
+        _release_lock(r)
+
+    _log(f"Tempo total: {int(time.time() - start_time)}s")
 
 
 if __name__ == "__main__":
