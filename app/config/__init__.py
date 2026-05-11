@@ -75,11 +75,11 @@ class Config:
     REDIS_URL = os.getenv("REDIS_URL", "").strip()
     REDIS_SOCKET_TIMEOUT_SECONDS = float(os.getenv("REDIS_SOCKET_TIMEOUT_SECONDS", "1.5"))
     REDIS_DEFAULT_TTL_SECONDS = int(os.getenv("REDIS_DEFAULT_TTL_SECONDS", "300"))
-    OBSERVATIONS_CACHE_PREFIX = "observations"
+    OBSERVATIONS_CACHE_PREFIX = "bem:observations"
     OBSERVATIONS_CACHE_TTL_SECONDS = int(os.getenv("OBSERVATIONS_CACHE_TTL_SECONDS", "86400"))
     NCBI_EMAIL = os.getenv("NCBI_EMAIL", "").strip()
     NCBI_API_KEY = os.getenv("NCBI_API_KEY", "").strip()
-    NCBI_CACHE_PREFIX = "ncbi:species"
+    NCBI_CACHE_PREFIX = "bem:ncbi:species"
     NCBI_CACHE_TTL_SECONDS = int(os.getenv("NCBI_CACHE_TTL_SECONDS", "86400"))
     NCBI_MAX_TRIES = int(os.getenv("NCBI_MAX_TRIES", "1"))
     NCBI_SLEEP_BETWEEN_TRIES_SECONDS = float(os.getenv("NCBI_SLEEP_BETWEEN_TRIES_SECONDS", "0.25"))
