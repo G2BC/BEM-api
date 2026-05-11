@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/G2BC/BEM-api/compare/v1.1.4...v1.2.0) (2026-05-11)
+
+
+### Features
+
+* update production environment variables in .env.vault ([c01783c](https://github.com/G2BC/BEM-api/commit/c01783cede9ffd5fe38fdcdda9d546b46388744e))
+
 ## [1.1.4](https://github.com/G2BC/BEM-api/compare/v1.1.3...v1.1.4) (2026-05-11)
 
 
