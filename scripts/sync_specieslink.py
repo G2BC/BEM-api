@@ -53,12 +53,12 @@ def _build_date(props):
     year = props.get("yearcollected")
     month = props.get("monthcollected")
     day = props.get("daycollected")
-    if not year:
+    if not year or year == "0000":
         return None
     parts = [year.zfill(4)]
-    if month:
+    if month and month != "00":
         parts.append(month.zfill(2))
-        if day:
+        if day and day != "00":
             parts.append(day.zfill(2))
     return "-".join(parts) if len(parts) == 3 else None
 
