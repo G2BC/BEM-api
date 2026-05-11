@@ -369,6 +369,9 @@ def _delete_stale_observations(species_id, seen_external_ids):
     return deleted
 
 
+_BRAZIL_BBOX = (-33.75, -73.99, 5.27, -28.85)  # (lat_min, lon_min, lat_max, lon_max)
+
+
 def _build_row(species_id, scientific_name, document):
     """Returns (row_dict, None) on success or (None, reason_str) on rejection."""
     lat, lng = _extract_coordinates(document)
@@ -377,6 +380,10 @@ def _build_row(species_id, scientific_name, document):
 
     if not (-90 <= lat <= 90 and -180 <= lng <= 180):
         return None, f"coordenadas inválidas ({lat}, {lng})"
+
+    lat_min, lon_min, lat_max, lon_max = _BRAZIL_BBOX
+    if not (lat_min <= lat <= lat_max and lon_min <= lng <= lon_max):
+        return None, f"fora do Brasil ({lat}, {lng})"
 
     bold_species = _text_value(
         _first_value(
