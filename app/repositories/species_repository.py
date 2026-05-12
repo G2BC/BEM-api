@@ -49,6 +49,22 @@ class SpeciesRepository:
             .group_by(Observation.species_id)
             .subquery()
         )
+        normalized_bem = func.upper(func.trim(Species.bem))
+        bem_order = case(
+            (normalized_bem == "BEM1", 0),
+            (normalized_bem == "BEM2", 1),
+            (normalized_bem == "BEM3", 2),
+            (normalized_bem == "BEM4", 3),
+            (normalized_bem == "BEM5", 4),
+            (normalized_bem == "BEM6", 5),
+            (normalized_bem == "BEM7", 6),
+            (normalized_bem == "BEM8", 7),
+            (normalized_bem == "BEM9", 8),
+            (normalized_bem == "BEM10", 9),
+            (normalized_bem == "P1", 10),
+            (normalized_bem == "P2", 11),
+            else_=8,
+        )
 
         base = (
             db.session.query(
@@ -77,7 +93,7 @@ class SpeciesRepository:
                     SpeciesSimilarity.similar_species
                 ),
             )
-            .order_by(Species.scientific_name.asc())
+            .order_by(bem_order.asc(), Species.scientific_name.asc())
         )
 
         filters = []
