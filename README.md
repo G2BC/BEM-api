@@ -78,6 +78,16 @@ uv run flask db upgrade
 
 ### Sincronizações externas
 
+| Sync               | Script                         | Frequência (UTC)              |
+| ------------------ | ------------------------------ | ----------------------------- |
+| BOLD               | `sync_bold.py`                 | Toda sexta-feira às 03:00AM   |
+| iNaturalist        | `sync_inaturalist.py`          | Todo sábado às 03:00AM        |
+| iNaturalist Photos | `import_inaturalist_photos.py` | Toda segunda-feira às 03:00AM |
+| speciesLink        | `sync_specieslink.py`          | Todo domingo às 03:00AM       |
+| Mushroom Observer  | `sync_mushroom_observer.py`    | Toda quinta-feira às 03:00AM  |
+| IUCN Red List      | `sync_iucn_red_list.py`        | Dia 1 de cada mês às 04:00AM  |
+| MycoBank           | `sync_mycobank.py`             | Dia 2 de cada mês às 04:00AM  |
+
 Os syncs podem ser executados localmente com `uv run python scripts/<script>.py`.
 Quando quiser limitar a execução a espécies específicas, use `BEM_ID` com os IDs internos da
 tabela `species` ou `BEM` com os códigos BEM.
