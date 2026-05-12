@@ -99,7 +99,12 @@ class SpeciesRepository:
         filters = []
 
         if search := (search or "").strip():
-            filters.append(Species.scientific_name.ilike(f"%{search}%"))
+            filters.append(
+                or_(
+                    Species.scientific_name.ilike(f"%{search}%"),
+                    Species.common_name.ilike(f"%{search}%"),
+                )
+            )
 
         if country:
             filters.append(Species.type_country.ilike(f"%{country}%"))
