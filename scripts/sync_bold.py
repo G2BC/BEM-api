@@ -33,16 +33,20 @@ from app.services.cache_service import CacheService  # noqa: E402
 from scripts.sync_base import SyncRunner  # noqa: E402
 
 BOLD_API_URL = os.getenv("BOLD_API_URL", "https://portal.boldsystems.org/api").rstrip("/")
+BOLD_API_KEY = os.getenv("BOLD_API_KEY", "").strip()
 PAGE_SIZE = int(os.getenv("BOLD_PAGE_SIZE", "500"))
 REQUEST_TIMEOUT = float(os.getenv("BOLD_REQUEST_TIMEOUT", "45"))
-SLEEP_BETWEEN_REQUESTS = float(os.getenv("BOLD_SLEEP_BETWEEN_REQUESTS", "1.0"))
+SLEEP_BETWEEN_REQUESTS = float(os.getenv("BOLD_SLEEP_BETWEEN_REQUESTS", "2.0"))
 MAX_RETRIES = int(os.getenv("BOLD_MAX_RETRIES", "3"))
 MAX_RECORDS_PER_SPECIES = int(os.getenv("BOLD_MAX_RECORDS_PER_SPECIES", "20000"))
 BOLD_GEO_QUERY = os.getenv("BOLD_GEO_QUERY", "geo:country:Brazil").strip()
 BOLD_SKIP_PREPROCESSOR = os.getenv("BOLD_SKIP_PREPROCESSOR", "").strip().lower() in {
     "1", "true", "yes",
 }
-HEADERS = {"User-Agent": "BEM-api/1.0 (bem.uneb.br; contact: bem.g2bc@gmail.com)"}
+_base_headers = {"User-Agent": "BEM-api/1.0 (bem.uneb.br; contact: bem.g2bc@gmail.com)"}
+if BOLD_API_KEY:
+    _base_headers["Authorization"] = f"Bearer {BOLD_API_KEY}"
+HEADERS = _base_headers
 
 _BRAZIL_BBOX = (-33.75, -73.99, 5.27, -28.85)  # (lat_min, lon_min, lat_max, lon_max)
 _BRAZIL_COUNTRY_NAMES = {"brazil", "brasil", "br"}
@@ -218,6 +222,7 @@ def _resolved_query(scientific_name):
         return submitted_query
 
     data = _request_json("/query/preprocessor", {"query": submitted_query})
+    time.sleep(SLEEP_BETWEEN_REQUESTS)
     terms = data.get("successful_terms") or []
     resolved = []
     has_tax_term = False
@@ -247,6 +252,7 @@ def _resolved_query(scientific_name):
 
 def _query_id(query):
     data = _request_json("/query", {"query": query, "extent": "full"})
+    time.sleep(SLEEP_BETWEEN_REQUESTS)
     query_id = data.get("query_id")
     if not query_id:
         raise RuntimeError(f"BOLD não retornou query_id para query={query!r}")
