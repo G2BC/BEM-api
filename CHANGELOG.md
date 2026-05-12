@@ -1,3 +1,10 @@
+## [1.3.2](https://github.com/G2BC/BEM-api/compare/v1.3.1...v1.3.2) (2026-05-12)
+
+
+### Bug Fixes
+
+* **species_repository:** enhance search functionality to include common names in species queries ([935b89f](https://github.com/G2BC/BEM-api/commit/935b89ff03a8734148bfb2ef4478c6aed939044f))
+
 ## [1.3.1](https://github.com/G2BC/BEM-api/compare/v1.3.0...v1.3.1) (2026-05-12)
 
 
