@@ -1,3 +1,10 @@
+## [1.3.1](https://github.com/G2BC/BEM-api/compare/v1.3.0...v1.3.1) (2026-05-12)
+
+
+### Bug Fixes
+
+* **species_repository:** add custom ordering for species based on BEM values to enhance query results ([f62297c](https://github.com/G2BC/BEM-api/commit/f62297c586fe6dc134e32dcfc81728714b6f087a))
+
 # [1.3.0](https://github.com/G2BC/BEM-api/compare/v1.2.4...v1.3.0) (2026-05-11)
 
 
