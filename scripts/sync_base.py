@@ -44,7 +44,7 @@ class SyncRunner:
     def __init__(self, app):
         self.app = app
         self.max_runtime = int(os.getenv(f"{self.env_prefix}_MAX_RUNTIME_SECONDS", "14100"))
-        self.group_pause = int(os.getenv(f"{self.env_prefix}_GROUP_PAUSE_SECONDS", "180"))
+        self.group_pause = int(os.getenv(f"{self.env_prefix}_GROUP_PAUSE_SECONDS", "60"))
         self._lock_key = f"bem:sync:{self.source_name}:lock"
         self._lock_ttl = self.max_runtime + 300
 
