@@ -76,12 +76,8 @@ def _photo_url(obs):
     return url.replace("/orig/", "/640/") if url else None
 
 
-def _fetch_page(name_id, scientific_name, page):
-    params = {"format": "json", "detail": "high", "page": page}
-    if name_id:
-        params["name_id"] = name_id
-    else:
-        params["name"] = scientific_name
+def _fetch_page(scientific_name, page):
+    params = {"format": "json", "detail": "high", "page": page, "name": scientific_name}
     params.update(BRAZIL_FILTER)
 
     try:
@@ -175,7 +171,7 @@ class MushroomSyncRunner(SyncRunner):
                 _log(f"  [{species_id}] Kill switch — abortando")
                 return total, 0, False
 
-            data = _fetch_page(mo_name_id, scientific_name, page)
+            data = _fetch_page(scientific_name, page)
             if data.get("errors"):
                 raise RuntimeError(f"Erro da API MO: {data['errors']}")
 
