@@ -35,7 +35,7 @@ SLEEP_AFTER_REQUEST = float(os.getenv("MO_SLEEP_AFTER_REQUEST", "12"))
 RETRYABLE_STATUS_CODES = {429, 500, 502, 503, 504}
 HEADERS = {"User-Agent": "BEM-api/1.0 (bem.uneb.br; contact: bem.g2bc@gmail.com)"}
 
-BRAZIL_BBOX = {"north": 5.272, "south": -33.750, "east": -34.793, "west": -73.983}
+BRAZIL_FILTER = {"region": "Brazil"}
 
 
 class MushroomBlocked(RuntimeError):
@@ -82,7 +82,7 @@ def _fetch_page(name_id, scientific_name, page):
         params["name_id"] = name_id
     else:
         params["name"] = scientific_name
-    params.update(BRAZIL_BBOX)
+    params.update(BRAZIL_FILTER)
 
     try:
         r = requests.get(f"{MO_API_URL}/observations", params=params, headers=HEADERS, timeout=REQUEST_TIMEOUT)
