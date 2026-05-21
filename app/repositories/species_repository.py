@@ -36,6 +36,7 @@ class SpeciesRepository:
         search: str | None = "",
         country: str | None = "",
         bem: str | None = "",
+        conservation: str | None = "",
         is_visible: bool | None = None,
         page: int | None = None,
         per_page: int | None = None,
@@ -111,6 +112,13 @@ class SpeciesRepository:
 
         if bem:
             filters.append(Species.bem == bem)
+
+        if conservation:
+            filters.append(
+                Species.characteristics.has(
+                    SpeciesCharacteristics.conservation_status == conservation.upper()
+                )
+            )
 
         if is_visible is not None:
             filters.append(Species.is_visible.is_(is_visible))
