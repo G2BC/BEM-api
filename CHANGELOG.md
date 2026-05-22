@@ -1,3 +1,10 @@
+# [1.8.0](https://github.com/G2BC/BEM-api/compare/v1.7.0...v1.8.0) (2026-05-22)
+
+
+### Features
+
+* **config:** add security schemes for API authentication and update API spec options ([1f7d1db](https://github.com/G2BC/BEM-api/commit/1f7d1dbcbff1105c5a67536bd225a34237daeeda))
+
 # [1.7.0](https://github.com/G2BC/BEM-api/compare/v1.6.0...v1.7.0) (2026-05-22)
 
 
