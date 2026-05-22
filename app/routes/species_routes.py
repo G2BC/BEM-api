@@ -75,7 +75,10 @@ class SpeciesCollection(MethodView):
         search = request.args.get("search", type=str)
         country = request.args.get("country", type=str)
         bem = request.args.get("bem", type=str)
-        conservation = request.args.get("conservation", type=str)
+        conservations_raw = request.args.get("conservation", type=str)
+        conservations = (
+            [s for s in conservations_raw.split(",") if s.strip()] if conservations_raw else None
+        )
         page = request.args.get("page", type=int)
         per_page = request.args.get("per_page", type=int)
         distributions_raw = request.args.get("distributions", type=str)
@@ -89,7 +92,7 @@ class SpeciesCollection(MethodView):
                 search=search,
                 country=country,
                 bem=bem,
-                conservation=conservation,
+                conservations=conservations,
                 is_visible=is_visible,
                 page=page,
                 per_page=per_page,

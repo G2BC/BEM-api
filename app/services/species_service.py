@@ -34,7 +34,7 @@ class SpeciesService:
         search: str | None = "",
         country: str | None = "",
         bem: str | None = "",
-        conservation: str | None = "",
+        conservations: list[str] | None = None,
         is_visible: bool | None = None,
         page: int | None = None,
         per_page: int | None = None,
@@ -43,7 +43,6 @@ class SpeciesService:
         search = (search or "").strip()
         country = (country or "").strip()
         bem = (bem or "").strip()
-        conservation = (conservation or "").strip()
 
         if not isinstance(is_visible, bool):
             raise AppError(pt="`is_visible` deve ser booleano", en="`is_visible` must be boolean")
@@ -59,7 +58,7 @@ class SpeciesService:
             search=search,
             country=country,
             bem=bem,
-            conservation=conservation,
+            conservations=conservations,
             is_visible=is_visible,
             page=page,
             per_page=per_page,
