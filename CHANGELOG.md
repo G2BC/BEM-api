@@ -1,3 +1,10 @@
+# [1.9.0](https://github.com/G2BC/BEM-api/compare/v1.8.0...v1.9.0) (2026-05-22)
+
+
+### Features
+
+* **species_repository:** enhance species retrieval logic and handle multiple results with AppError ([4d13df1](https://github.com/G2BC/BEM-api/commit/4d13df129620d67c044de475806d13aed1286b07))
+
 # [1.8.0](https://github.com/G2BC/BEM-api/compare/v1.7.0...v1.8.0) (2026-05-22)
 
 
