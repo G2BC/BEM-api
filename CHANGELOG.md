@@ -1,3 +1,10 @@
+# [1.6.0](https://github.com/G2BC/BEM-api/compare/v1.5.1...v1.6.0) (2026-05-22)
+
+
+### Features
+
+* **routes:** update blueprint registration to include spec_opts for improved environment handling and remove unused endpoints ([bd83456](https://github.com/G2BC/BEM-api/commit/bd83456cab7583e50e50e295199e4db59f69361c))
+
 ## [1.5.1](https://github.com/G2BC/BEM-api/compare/v1.5.0...v1.5.1) (2026-05-22)
 
 
