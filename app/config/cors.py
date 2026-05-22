@@ -50,7 +50,6 @@ def _is_api_cors_request() -> bool:
     public_methods = {
         "/snapshots": {"GET"},
         "/species": {"GET"},
-        "/species-change-requests": {"POST"},
     }
     return any(
         _path_matches(path, prefix) and method in methods
