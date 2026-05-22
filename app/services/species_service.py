@@ -44,7 +44,7 @@ class SpeciesService:
         country = (country or "").strip()
         bem = (bem or "").strip()
 
-        if not isinstance(is_visible, bool):
+        if is_visible is not None and not isinstance(is_visible, bool):
             raise AppError(pt="`is_visible` deve ser booleano", en="`is_visible` must be boolean")
 
         if page is not None:
