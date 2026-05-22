@@ -1,3 +1,10 @@
+## [1.5.1](https://github.com/G2BC/BEM-api/compare/v1.5.0...v1.5.1) (2026-05-22)
+
+
+### Bug Fixes
+
+* **species_service:** update is_visible validation to allow None value ([fee3f35](https://github.com/G2BC/BEM-api/commit/fee3f35c6a3322b1359e395d6c0d4b1c7eaeb879))
+
 # [1.5.0](https://github.com/G2BC/BEM-api/compare/v1.4.0...v1.5.0) (2026-05-22)
 
 
