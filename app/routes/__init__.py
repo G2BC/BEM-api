@@ -1,11 +1,10 @@
 import os
 
+from flask import Flask
+from flask_smorest import Api
 
-def _private() -> dict:
-    return {"hidden": True} if os.getenv("APP_ENV", "development").strip().lower() != "development" else {}
 
-
-def register_blueprints(api) -> None:
+def register_blueprints(api: Api, app: Flask) -> None:
     from .auth_routes import auth_bp
     from .contact_routes import contact_bp
     from .reference_routes import reference_bp
@@ -18,17 +17,16 @@ def register_blueprints(api) -> None:
     from .species_routes import admin_specie_bp, specie_bp
     from .user_routes import user_bp
 
-    api.register_blueprint(auth_bp, url_prefix="/auth", spec_opts=_private())
-    api.register_blueprint(registration_bp, url_prefix="/registrations", spec_opts=_private())
+    is_dev = os.getenv("APP_ENV", "development").strip().lower() == "development"
+    private = api.register_blueprint if is_dev else app.register_blueprint
+
     api.register_blueprint(specie_bp, url_prefix="/species")
-    api.register_blueprint(species_change_request_bp, url_prefix="/species-change-requests", spec_opts=_private())
-    api.register_blueprint(contact_bp, url_prefix="/contact-messages", spec_opts=_private())
     api.register_blueprint(snapshot_bp, url_prefix="/snapshots")
-    api.register_blueprint(user_bp, url_prefix="/admin/users", spec_opts=_private())
-    api.register_blueprint(admin_specie_bp, url_prefix="/admin/species", spec_opts=_private())
-    api.register_blueprint(
-        admin_species_change_request_bp,
-        url_prefix="/admin/species-change-requests",
-        spec_opts=_private(),
-    )
-    api.register_blueprint(reference_bp, url_prefix="/admin/references", spec_opts=_private())
+    private(auth_bp, url_prefix="/auth")
+    private(registration_bp, url_prefix="/registrations")
+    private(species_change_request_bp, url_prefix="/species-change-requests")
+    private(contact_bp, url_prefix="/contact-messages")
+    private(user_bp, url_prefix="/admin/users")
+    private(admin_specie_bp, url_prefix="/admin/species")
+    private(admin_species_change_request_bp, url_prefix="/admin/species-change-requests")
+    private(reference_bp, url_prefix="/admin/references")
