@@ -1,3 +1,4 @@
+from app.exceptions import AppError
 from app.extensions import db
 from app.models.decay_type import DecayType
 from app.models.distribution import Distribution
@@ -206,11 +207,17 @@ class SpeciesRepository:
         if species.isdigit():
             id = int(species)
             base = base.filter(Species.id == id)
-        else:
-            name = species.replace("+", " ")
-            base = base.filter(Species.scientific_name.ilike(f"%{name}%"))
+            return base.first()
 
-        return base.first()
+        name = species.replace("+", " ")
+        base = base.filter(Species.scientific_name.ilike(name))
+        results = base.all()
+        if len(results) > 1:
+            raise AppError(
+                pt="Múltiplas espécies encontradas com esse nome.",
+                en="Multiple species found with that name.",
+            )
+        return results[0] if results else None
 
     @classmethod
     def country_select(

@@ -421,6 +421,7 @@ SpeciesOutdatedPaginationSchema = make_pagination_schema(SpeciesOutdatedSchema)
 
 class SpeciesDetailSchema(Schema):
     id = fields.Integer(dump_only=True)
+    uid = fields.String(dump_only=True)
     scientific_name = fields.String(allow_none=True)
     common_name = fields.String(allow_none=True)
     bem = fields.String(allow_none=True)
