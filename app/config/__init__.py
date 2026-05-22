@@ -13,6 +13,19 @@ class Config:
     OPENAPI_URL_PREFIX = ""
     OPENAPI_SWAGGER_UI_PATH = "/docs"
     OPENAPI_SWAGGER_UI_URL = "https://cdn.jsdelivr.net/npm/swagger-ui-dist/"
+    _security_schemes = {
+        "ApiKeyAuth": {"type": "apiKey", "in": "header", "name": "X-API-Key"},
+    }
+    if os.getenv("APP_ENV", "development").strip().lower() == "development":
+        _security_schemes["BearerAuth"] = {
+            "type": "http",
+            "scheme": "bearer",
+            "bearerFormat": "JWT",
+        }
+    API_SPEC_OPTIONS = {
+        "components": {"securitySchemes": _security_schemes},
+        "security": [{"ApiKeyAuth": []}],
+    }
     SQLALCHEMY_DATABASE_URI = os.getenv(
         "DATABASE_URL", "postgresql://postgres:postgres@db:5432/app"
     )
