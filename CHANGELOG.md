@@ -1,3 +1,10 @@
+# [1.5.0](https://github.com/G2BC/BEM-api/compare/v1.4.0...v1.5.0) (2026-05-22)
+
+
+### Features
+
+* **species:** update conservation filter to accept multiple statuses as a list ([0c9ddee](https://github.com/G2BC/BEM-api/commit/0c9ddee5a34611d142f33458c2b7dc713741e4cd))
+
 # [1.4.0](https://github.com/G2BC/BEM-api/compare/v1.3.2...v1.4.0) (2026-05-21)
 
 
