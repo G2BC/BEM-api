@@ -1,3 +1,10 @@
+## [1.9.1](https://github.com/G2BC/BEM-api/compare/v1.9.0...v1.9.1) (2026-06-08)
+
+
+### Bug Fixes
+
+* **sync_bold:** update BOLD_GEO_QUERY to use the correct format for Brazil ([2188373](https://github.com/G2BC/BEM-api/commit/2188373b3aa69e767091278a254a0ed61b73298d))
+
 # [1.9.0](https://github.com/G2BC/BEM-api/compare/v1.8.0...v1.9.0) (2026-05-22)
 
 
