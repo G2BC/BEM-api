@@ -39,7 +39,7 @@ REQUEST_TIMEOUT = float(os.getenv("BOLD_REQUEST_TIMEOUT", "45"))
 SLEEP_BETWEEN_REQUESTS = float(os.getenv("BOLD_SLEEP_BETWEEN_REQUESTS", "2.0"))
 MAX_RETRIES = int(os.getenv("BOLD_MAX_RETRIES", "3"))
 MAX_RECORDS_PER_SPECIES = int(os.getenv("BOLD_MAX_RECORDS_PER_SPECIES", "20000"))
-BOLD_GEO_QUERY = os.getenv("BOLD_GEO_QUERY", "geo:country:Brazil").strip()
+BOLD_GEO_QUERY = os.getenv("BOLD_GEO_QUERY", "geo:country/ocean:Brazil").strip()
 BOLD_SKIP_PREPROCESSOR = os.getenv("BOLD_SKIP_PREPROCESSOR", "").strip().lower() in {
     "1", "true", "yes",
 }
