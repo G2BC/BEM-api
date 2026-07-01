@@ -18,25 +18,25 @@ fi
 
 echo "Backup encontrado: ${BACKUP_FILE}"
 
-case "${BACKUP_FILE}" in
-  *.dump)
-    echo "Restaurando dump em formato custom/tar via pg_restore..."
-    if ! pg_restore \
-      --clean \
-      --if-exists \
-      --no-owner \
-      --no-privileges \
-      -U "${POSTGRES_USER}" \
-      -d "${POSTGRES_DB}" \
-      "${BACKUP_FILE}"; then
-      echo "Falha no pg_restore. O backup.dump foi gerado por versao de pg_dump incompativel com esta imagem do Postgres." >&2
-      exit 1
-    fi
-    ;;
-  *)
-    echo "Formato de backup nao suportado. Use apenas backup.dump." >&2
+if [ "$(head -c 5 "${BACKUP_FILE}")" = "PGDMP" ]; then
+  echo "Restaurando dump em formato custom/tar via pg_restore..."
+  if ! pg_restore \
+    --clean \
+    --if-exists \
+    --no-owner \
+    --no-privileges \
+    -U "${POSTGRES_USER}" \
+    -d "${POSTGRES_DB}" \
+    "${BACKUP_FILE}"; then
+    echo "Falha no pg_restore. O backup.dump foi gerado por versao de pg_dump incompativel com esta imagem do Postgres." >&2
     exit 1
-    ;;
-esac
+  fi
+else
+  echo "Restaurando dump em formato texto (plain SQL) via psql..."
+  if ! psql -v ON_ERROR_STOP=1 -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" -f "${BACKUP_FILE}"; then
+    echo "Falha ao restaurar o dump via psql." >&2
+    exit 1
+  fi
+fi
 
 echo "Restore concluido com sucesso."
