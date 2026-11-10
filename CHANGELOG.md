@@ -1,3 +1,10 @@
+## [1.9.2](https://github.com/G2BC/BEM-api/compare/v1.9.1...v1.9.2) (2026-11-10)
+
+
+### Bug Fixes
+
+* ppgrade Node.js version from 20 to 22 ([e57824c](https://github.com/G2BC/BEM-api/commit/e57824c01178c5535fd61db71936ff46ed777be6))
+
 ## [1.9.1](https://github.com/G2BC/BEM-api/compare/v1.9.0...v1.9.1) (2026-06-08)
 
 
